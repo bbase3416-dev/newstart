@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工单备注项原型</title>
+<style>
+:root{
+  --primary:#2080f0; --primary-hover:#4098fc; --primary-soft:rgba(32,128,240,.1); --primary-line:rgba(32,128,240,.3);
+  --success:#18a058; --success-soft:rgba(24,160,88,.1); --success-line:rgba(24,160,88,.3);
+  --warning:#f0a020; --warning-soft:rgba(240,160,32,.12); --warning-line:rgba(240,160,32,.35);
+  --error:#d03050; --error-soft:rgba(208,48,80,.08); --error-line:rgba(208,48,80,.3);
+  --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb; --line-2:#efeff5;
+  --bg:#f3f4f6; --card:#fff; --th:#fafafc; --new:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-width:1280px}
+button{font-family:inherit}
+/* ===== 顶部导航 ===== */
+.topbar{height:60px;background:#fff;display:flex;align-items:center;padding:0 40px;box-shadow:0 1px 4px rgba(0,21,41,.06);position:relative;z-index:5}
+.logo{width:30px;height:30px;border-radius:8px;background:#f06a5b;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.brand{margin-left:10px;font-weight:600}
+.clock{margin-left:28px;color:var(--text-2)}
+.nav{display:flex;gap:40px;margin-left:80px}
+.nav span{color:var(--text-2);cursor:default}
+.nav span.on{color:var(--primary)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:18px;color:var(--text-2);font-size:13px}
+.top-right b{color:var(--error);font-weight:400}
+.switch{width:40px;height:22px;border-radius:11px;background:#dbdbdf;position:relative;display:inline-block;vertical-align:middle;margin-right:6px}
+.switch:after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff}
+.avatar{width:30px;height:30px;border-radius:50%;background:#f06a5b}
+/* ===== 多页签 ===== */
+.tabsbar{display:flex;gap:6px;padding:8px 40px 0;background:var(--bg)}
+.ptab{height:32px;padding:0 12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;cursor:pointer;color:var(--text-2);font-size:13px}
+.ptab.on{background:var(--primary);color:#fff}
+.ptab i{font-style:normal;font-size:11px;opacity:.7}
+/* ===== 页面 ===== */
+.page{padding:10px 40px 40px}
+.card{background:var(--card);border-radius:4px;padding:18px 24px}
+.card+.card{margin-top:10px}
+.card-title{font-size:18px;font-weight:600;margin-bottom:16px}
+.form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));column-gap:18px;row-gap:14px}
+.fi{display:flex;align-items:center;gap:10px;min-width:0}
+.fi label{flex:0 0 86px;text-align:right;color:var(--text);font-size:13px;line-height:1.3}
+.fi .ctl{flex:1;min-width:0}
+.fi.span2{grid-column:span 2}
+.inp,.sel{width:100%;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
+.inp::placeholder{color:#c2c2c2}
+.sel{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3l4 4 4-4' fill='none' stroke='%23b0b0b0' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:26px;cursor:pointer}
+.sel.empty{color:#c2c2c2}
+.inp:focus,.sel:focus{border-color:var(--primary)}
+.range{display:flex;align-items:center;gap:6px}
+.range .inp{flex:1}
+.date{display:flex;align-items:center;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);gap:10px;white-space:nowrap;overflow:hidden}
+.date span{flex:1;text-align:center}
+.date .ph{color:#c2c2c2}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.btn{height:34px;padding:0 16px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-hover)}
+.btn.disabled{background:#a6cbf6;border-color:#a6cbf6;color:#fff;cursor:not-allowed}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+/* NEW 徽章 */
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;letter-spacing:.3px}
+.fi.is-new .sel,.fi.is-new .inp{border-color:rgba(229,72,77,.55);box-shadow:0 0 0 2px rgba(229,72,77,.08)}
+/* ===== 表格 ===== */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line-2);border-radius:3px}
+table.tbl{border-collapse:collapse;width:max-content;min-width:100%}
+.tbl th{background:var(--th);font-weight:500;text-align:center;padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);white-space:nowrap;font-size:13px}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);text-align:left;vertical-align:middle;font-size:13px;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.c{text-align:center}
+.tbl th.new-col{background:#fff4f4}
+.tbl td.new-col{background:#fffafa}
+.ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sticky-r{position:sticky;right:0;background:#fff;box-shadow:-4px 0 6px -4px rgba(0,0,0,.12)}
+th.sticky-r{background:var(--th)}
+.muted{color:var(--text-3)}
+.link{color:var(--primary);cursor:pointer}
+.mono{font-variant-numeric:tabular-nums}
+.acct{display:inline-block;margin-top:4px;padding:0 6px;border:1px solid var(--warning-line);background:var(--warning-soft);color:#c77c02;border-radius:3px;font-size:12px}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;font-size:12px;border:1px solid var(--line);background:#fafafc;color:var(--text-2);white-space:nowrap}
+.tag.info{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-line)}
+.tag.success{color:var(--success);background:var(--success-soft);border-color:var(--success-line)}
+.tag.warning{color:#d68a0c;background:var(--warning-soft);border-color:var(--warning-line)}
+.tag.error{color:var(--error);background:var(--error-soft);border-color:var(--error-line)}
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--text-2)}
+.pager .pg{width:28px;height:28px;border:1px solid var(--line);border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--text-3)}
+.pager .pg.on{border-color:var(--primary);color:var(--primary)}
+.empty-row td{text-align:center!important;color:var(--text-3);padding:30px}
+/* 子页签（KYC） */
+.subtabs{display:flex;gap:8px}
+.subtab{height:36px;padding:0 16px;display:flex;align-items:center;border-radius:4px;cursor:pointer;color:var(--text);font-size:14px}
+.subtab.on{background:var(--primary);color:#fff;font-weight:500}
+/* ===== 模拟控制条 ===== */
+.sim{border:1.5px dashed #e0b400;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:#7a5b00}
+.sim strong{color:#ad7f00}
+.sim .inp,.sim .sel{height:28px;width:auto}
+/* ===== 弹窗（模拟产品功能） ===== */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:6px;width:min(1100px,92vw);max-height:84vh;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.modal-h{padding:16px 22px;font-weight:600;font-size:16px;display:flex;align-items:center}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:18px;font-weight:400}
+.modal-b{padding:0 22px 8px;overflow:auto}
+.modal-f{padding:12px 22px 18px;display:flex;justify-content:flex-end;gap:10px}
+.demo-note{font-size:12px;color:#7a5b00;background:#fffbe6;border:1px dashed #e0b400;padding:6px 10px;border-radius:3px;margin-bottom:10px}
+/* 消息提示 */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);border-radius:4px;padding:10px 16px;font-size:13px;display:none;align-items:center;gap:8px;z-index:90}
+.toast.show{display:flex}
+.toast .dot{width:16px;height:16px;border-radius:50%;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+/* ===== 需求说明抽屉 ===== */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--primary);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--primary)}
+.drawer-b h3:first-child{margin-top:0}
+.drawer-b ol,.drawer-b ul{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+/* ===== 本原型补充 ===== */
+.state-cell{display:flex;flex-direction:column;align-items:flex-start;gap:6px;white-space:normal;width:120px}
+.rtag{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:3px;font-size:12px;background:#f2f3f5;color:#4e5969;border:1px solid #e5e6eb;white-space:nowrap}
+.th-new{background:#fff4f4!important}
+/* 处理弹窗 */
+.wo-modal{width:min(1080px,94vw)}
+.wo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wo-panel-box{border:1px solid #d5d5d5;border-radius:12px;padding:12px 14px;min-width:0}
+.desc{display:grid;grid-template-columns:1.25fr 1fr;row-gap:10px;column-gap:12px;font-size:14px}
+.desc .it{display:flex;gap:8px;min-width:0;align-items:center}
+.desc .lb{color:#6b6e73;font-size:13px;flex:0 0 auto;min-width:64px}
+.desc .vl{font-weight:500;min-width:0;word-break:break-all}
+.blk{margin-top:16px}
+.blk-h{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;font-weight:600;color:#5c5f63}
+.blk-h .req{color:var(--error);font-weight:400}
+.blk-h .sub{font-weight:400;color:var(--text-3);font-size:12px}
+.ta{width:100%;min-height:62px;border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;outline:none}
+.ta.err{border-color:var(--error)}
+.ta:disabled{background:#fafafc;color:var(--text-2)}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.qbtn{height:22px;padding:0 10px;border-radius:3px;background:var(--primary);color:#fff;border:none;font-size:12px;cursor:pointer}
+.qbtn.ghost{background:#fff;color:var(--text-2);border:1px dashed #c9cdd4}
+.qbtn:disabled{opacity:.5;cursor:not-allowed}
+.new-blk{border:1px dashed rgba(229,72,77,.5);background:#fffafa;border-radius:6px;padding:10px 12px}
+.pick{display:flex;flex-wrap:wrap;gap:18px}
+.pick .p{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.pick .p .rd{width:14px;height:14px;border:1px solid #c9cdd4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#fff}
+.pick .p.on .rd{border-color:var(--primary)}
+.pick .p.on .rd:after{content:"";width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.pick.dis .p{cursor:not-allowed;color:var(--text-2)}
+.fields{font-size:13px}
+.fields .row{display:flex;padding:8px 0;border-bottom:1px dashed var(--line-2)}
+.fields .row:last-child{border-bottom:none}
+.fields .k{width:110px;color:#6b6e73;flex:0 0 auto}
+.fields .v{flex:1;min-width:0;word-break:break-all}
+.btn[disabled]{opacity:.45;cursor:not-allowed;pointer-events:auto}
+.btn[disabled]:hover{border-color:var(--line);color:inherit}
+.btn.primary[disabled]:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.foot-hint{margin-right:auto;font-size:12px;color:var(--error);align-self:center}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">AR</div><span class="brand">AR</span>
+  <span class="clock">2026-09-24 15:46</span>
+  <nav class="nav"><span>PWA管理</span><span class="on">工单管理</span><span>KYC模块</span><span>内容管理</span><span>系统设置</span></nav>
+  <div class="top-right"><span><i class="switch"></i>自动刷新</span><span>系统处理中: <b>1</b></span><span>待处理: <b>1</b></span><i class="avatar"></i><span>luna002</span></div>
+</header>
+
+<div class="tabsbar"><div class="ptab on">工单列表 <i>✕</i></div></div>
+
+<main class="page">
+  <div class="sim">
+    <strong>模拟控制条（仅用于演示，不属于需求）</strong>
+    <span>操作路径：对「处理中」工单点「编辑」打开处理弹窗；「待处理」工单先点「锁定」再「编辑」</span>
+  </div>
+  <section class="card">
+    <div class="card-title">工单管理</div>
+    <div class="form">
+      <div class="fi"><label>会员账号</label><div class="ctl"><input class="inp" placeholder="请输入会员账号,Id,邮箱查询"></div></div>
+      <div class="fi"><label>工单号</label><div class="ctl"><input class="inp" placeholder="请输入工单号"></div></div>
+      <div class="fi"><label>三方名称</label><div class="ctl"><input class="inp" placeholder="请输入三方名称"></div></div>
+      <div class="fi"><label>订单号</label><div class="ctl"><input class="inp" placeholder="请输入订单号"></div></div>
+      <div class="fi"><label>查询结果</label><div class="ctl"><input class="inp" placeholder="请输入查询结果"></div></div>
+
+      <div class="fi"><label>状态</label><div class="ctl"><select class="sel" id="f-state"><option value="">全部</option><option value="5">系统处理中</option><option value="1">待处理</option><option value="2">处理中</option><option value="3">已驳回</option><option value="4">已处理</option></select></div></div>
+      <div class="fi"><label>KYC连接</label><div class="ctl"><select class="sel empty"><option>请选择状态</option></select></div></div>
+      <div class="fi"><label>是否匹配收款人UPI ID</label><div class="ctl"><select class="sel empty"><option>请选择状态</option></select></div></div>
+      <div class="fi"><label>是否匹配UTR</label><div class="ctl"><select class="sel empty"><option>请选择状态</option></select></div></div>
+      <div class="fi"><label>商户</label><div class="ctl"><select class="sel empty"><option>请选择商户</option></select></div></div>
+
+      <div class="fi"><label>工单类型</label><div class="ctl"><select class="sel empty" id="f-type"><option value="">请选择工单类型</option></select></div></div>
+      <div class="fi"><label>工单限制类型</label><div class="ctl"><select class="sel empty"><option>请选择状态</option></select></div></div>
+      <div class="fi"><label>vip等级</label><div class="ctl"><select class="sel empty"><option>请选择Vip等级</option></select></div></div>
+      <div class="fi"><label>金额区间</label><div class="ctl range"><input class="inp" placeholder="最小金额"><span class="muted">-</span><input class="inp" placeholder="最大金额"></div></div>
+      <div class="fi"><label>附件类型</label><div class="ctl"><select class="sel empty"><option>请选择状态</option></select></div></div>
+
+      <div class="fi span2"><label>操作时间</label><div class="ctl"><div class="date"><span class="ph">开始日期时间</span><span class="muted">→</span><span class="ph">结束日期时间</span></div></div></div>
+      <div class="fi span2"><label>提交时间</label><div class="ctl"><div class="date"><span>2026-09-23 00:00:00</span><span class="muted">→</span><span>2026-09-24 23:59:59</span></div></div></div>
+      <div class="fi is-new"><label>备注项<span class="new">NEW</span></label><div class="ctl"><select class="sel empty" id="f-remark"><option value="">请选择备注项</option></select></div></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="wo-query">查询</button><button class="btn" id="wo-reset">重置</button></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <button class="btn primary" id="wo-export">导出</button>
+      <button class="btn disabled">批量三方查询</button>
+      <button class="btn primary">批量驳回</button>
+      <button class="btn disabled">批量生成</button>
+      <button class="btn disabled">模版下载</button>
+      <button class="btn disabled">批量转发</button>
+      <button class="btn disabled">评论导出</button>
+      <button class="btn primary">提交工单</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl" id="wo-table"></table></div>
+    <div class="pager"><span id="wo-total"></span><span class="pg">‹</span><span class="pg on">1</span><span class="pg">›</span></div>
+  </section>
+</main>
+
+<!-- 处理弹窗（模拟产品功能） -->
+<div class="mask" id="wo-mask">
+  <div class="modal wo-modal">
+    <div class="modal-h"><span>工单详情</span><span class="x" data-close="wo-mask">✕</span></div>
+    <div class="modal-b">
+      <div class="wo-grid">
+        <div class="wo-panel-box">
+          <div class="desc" id="d-desc"></div>
+          <div class="blk">
+            <div class="blk-h">备注 <span class="sub">（回复给会员）</span></div>
+            <textarea class="ta" id="d-remark" maxlength="1024" placeholder="请输入备注"></textarea>
+            <div class="quick" id="d-quick"></div>
+          </div>
+          <div class="blk new-blk">
+            <div class="blk-h"><span class="req">*</span>备注项<span class="new">NEW</span><span class="sub">单选；仅后台可见，不展示给会员</span></div>
+            <div class="pick" id="d-pick"></div>
+          </div>
+        </div>
+        <div class="wo-panel-box">
+          <div class="blk-h" style="margin-bottom:10px">会员提交信息</div>
+          <div class="fields" id="d-fields"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f" id="d-foot"></div>
+  </div>
+</div>
+
+<!-- 导出预览（模拟） -->
+<div class="mask" id="exp-mask">
+  <div class="modal">
+    <div class="modal-h"><span>工单列表 导出内容预览</span><span class="x" data-close="exp-mask">✕</span></div>
+    <div class="modal-b">
+      <div class="demo-note">仅用于演示导出文件的列和内容，实际点击「导出」直接下载 Excel 文件，不弹此窗口。</div>
+      <div class="tbl-wrap"><table class="tbl" id="exp-table"></table></div>
+    </div>
+    <div class="modal-f"><button class="btn" data-close="exp-mask">关闭</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot" id="toast-dot">!</span><span id="toast-text"></span></div>
+
+<!-- 需求说明抽屉 -->
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">来源：充值订单自动申诉需求对接群，可安。原型中带 <span class="new">NEW</span> 的为本次新增。</p>
+
+    <h3>改造点</h3>
+    <table>
+      <tr><th style="width:200px">页面</th><th>改动</th></tr>
+      <tr><td>工单列表 / 待处理工单 → 处理弹窗</td><td>新增「备注项」单选，变更状态时必选</td></tr>
+      <tr><td>工单列表 / 待处理工单</td><td>「状态」列下方展示备注项；新增「备注项」筛选；导出新增「备注项」列</td></tr>
+    </table>
+
+    <h3>业务规则</h3>
+    <ol>
+      <li>备注项固定三个选项：退回到账号、资料不完整、P视频/PDF，适用于所有工单类型。</li>
+      <li>处理工单点「确认」「驳回」时（一对一客服为「结束」）备注项必选、单选，未选择时这些按钮不可点击。</li>
+      <li>备注项仅后台可见，不展示给会员（和原有「备注」不同，原有「备注」是回复给会员的内容）。</li>
+      <li>导出在「备注」列后新增「备注项」列。</li>
+    </ol>
+
+    <h3>限制条件</h3>
+    <ol>
+      <li>本次不做：批量驳回选择备注项；已处理/已驳回工单修改备注项。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+/* ---------- 演示数据 ---------- */
+const OPTS = ['退回到账号','资料不完整','P视频/PDF'];
+const WO = [
+  {id:'2609240908229727097',type:'存款未到账',name:'Deposit Not Received',vip:'VIP 1',uid:'22389309',acct:'917325808918',state:4,submit:'2026-09-24 09:08:22',op:'2026-09-24 09:20:11',opMan:'B1Ayews',remark:'Your payment has been credited.',ip:'2409:40c1:88f0::6',tag:'退回到账号',f:{'UTR':'426719952017','充值金额':'5000.00','充值订单号':'RC2026092412502639104840','付款凭证':'receipt.jpg'}},
+  {id:'2609240723560447293',type:'取款未到账',name:'Withdrawal Not Received',vip:'VIP 1',uid:'9296934',acct:'918111475253',state:3,submit:'2026-09-24 07:23:56',op:'2026-09-24 08:02:33',opMan:'luna002',remark:'Please upload bank statement in PDF.',ip:'2409:40c1:9::2',tag:'P视频/PDF',f:{'取款订单号':'WD2026092407112233','取款金额':'2000.00'}},
+  {id:'2609240724189335496',type:'修改登录密码',name:'Reset Password',vip:'VIP 3',uid:'2489145',acct:'918179635085',state:2,submit:'2026-09-24 07:24:18',op:'2026-09-24 07:40:09',opMan:'luna002',remark:'',ip:'2409:40e5:12::3',tag:'',f:{'手机号':'918179635085','证件照片':'id_card.jpg'}},
+  {id:'2609240725560067393',type:'存款未到账',name:'Deposit Not Received',vip:'VIP 2',uid:'6589694',acct:'918655402211',state:1,submit:'2026-09-24 07:25:56',op:'--',opMan:'--',remark:'',ip:'2409:40c1:77::9',tag:'',f:{'UTR':'426655120098','充值金额':'100.00','充值订单号':'RC2026092206344456110251'}},
+  {id:'2609240908211682594',type:'一对一客服',name:'Game Problem',vip:'VIP 2',uid:'158946',acct:'919965290653',state:2,submit:'2026-09-24 09:08:21',op:'2026-09-24 09:12:40',opMan:'luna002',remark:'',ip:'2409:40c2:5::1',tag:'',f:{'问题描述':'Game stuck after bet, balance not returned.'}},
+  {id:'2609240655102283341',type:'忘记会员账号',name:'Forgot Account',vip:'VIP 1',uid:'7731205',acct:'919012233445',state:4,submit:'2026-09-24 06:55:10',op:'2026-09-24 07:05:48',opMan:'admin',remark:'Your account is 919012233445.',ip:'2409:40c1:3::8',tag:'资料不完整',f:{'手机号':'919012233445'}},
+  {id:'2609240908240467197',type:'会员账号解冻',name:'Account Unfreeze',vip:'VIP 4',uid:'958187',acct:'8801835887962',state:5,submit:'2026-09-24 09:08:24',op:'2026-09-24 09:10:02',opMan:'admin',remark:'',ip:'2409:40c1:1a2b::1',tag:'',f:{'申请说明':'Account frozen by mistake.'}},
+];
+const QUICK = ['Your payment has been credited.','Please upload a clear receipt.','Please upload bank statement in PDF.'];
+const STATE = {5:['系统处理中','info'],1:['待处理',''],2:['处理中','warning'],3:['已驳回','error'],4:['已处理','success']};
+const ME = 'luna002';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tag = (t, c) => `<span class="tag ${c||''}">${esc(t)}</span>`;
+const now = () => '2026-09-24 15:46:' + String(new Date().getSeconds()).padStart(2,'0');
+
+/* ---------- 工单列表 ---------- */
+[...new Set(WO.map(r => r.type))].forEach(t => $('#f-type').insertAdjacentHTML('beforeend', `<option>${t}</option>`));
+OPTS.forEach(o => $('#f-remark').insertAdjacentHTML('beforeend', `<option>${o}</option>`));
+document.querySelectorAll('#f-type,#f-remark').forEach(s => s.onchange = () => s.classList.toggle('empty', !s.value));
+let rows = WO.slice();
+function query(){
+  const st = $('#f-state').value, tp = $('#f-type').value, rk = $('#f-remark').value;
+  rows = WO.filter(r => (!st || String(r.state) === st) && (!tp || r.type === tp) && (!rk || r.tag === rk));
+  renderWO();
+}
+function renderWO(){
+  const head = ['工单号','工单类型','工单名称','vip等级','会员id','状态','提交时间','操作时间','操作人','备注'];
+  let h = '<thead><tr>' + head.map(x => x === '状态' ? '<th class="th-new">状态<span class="new">NEW</span></th>' : `<th>${x}</th>`).join('') + '<th class="sticky-r">操作</th></tr></thead><tbody>';
+  if (!rows.length) h += `<tr class="empty-row"><td colspan="${head.length+1}">暂无数据</td></tr>`;
+  rows.forEach(r => {
+    const s = STATE[r.state];
+    const acts = [`<button class="btn sm" data-view="${r.id}">查看</button>`];
+    if ([3,4].includes(r.state)) acts.push(`<button class="btn sm" style="color:#d68a0c;border-color:var(--warning-line)">修改备注</button>`);
+    if (r.state === 2 && r.opMan === ME) acts.push(`<button class="btn sm" style="color:var(--primary);border-color:var(--primary-line)" data-edit="${r.id}">编辑</button>`);
+    if (r.state === 1) acts.push(`<button class="btn sm" style="color:var(--success);border-color:var(--success-line)" data-lock="${r.id}">锁定</button>`);
+    h += `<tr>
+      <td class="mono">${r.id} <span class="link">⧉</span></td>
+      <td>${esc(r.type)}</td>
+      <td style="max-width:140px"><span class="ell" title="${esc(r.name)}">${esc(r.name)}</span></td>
+      <td>${r.vip}</td>
+      <td>会员id: <span class="link">${r.uid}</span><br><span class="acct">${r.acct}</span></td>
+      <td><div class="state-cell">${tag(s[0], s[1])}${r.tag ? `<span class="rtag">${esc(r.tag)}</span>` : ''}</div></td>
+      <td>${r.submit}</td><td>${r.op}</td><td>${esc(r.opMan)}</td>
+      <td style="max-width:200px"><span class="ell" title="${esc(r.remark)}">${esc(r.remark) || '<span class="muted">--</span>'}</span></td>
+      <td class="sticky-r"><div style="display:flex;gap:6px">${acts.join('')}</div></td>
+    </tr>`;
+  });
+  $('#wo-table').innerHTML = h + '</tbody>';
+  $('#wo-total').textContent = `共 ${rows.length} 条`;
+}
+$('#wo-table').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.view) openWO(b.dataset.view, false);
+  if (b.dataset.edit) openWO(b.dataset.edit, true);
+  if (b.dataset.lock) { const r = WO.find(x => x.id === b.dataset.lock); r.state = 2; r.opMan = ME; r.op = now(); toast('锁定成功', 'success'); query(); }
+};
+$('#wo-query').onclick = query;
+$('#wo-reset').onclick = () => { $('#f-state').value = ''; ['#f-type','#f-remark'].forEach(s => { $(s).value = ''; $(s).classList.add('empty'); }); query(); };
+
+$('#wo-export').onclick = () => {
+  const cols = [['工单号','id'],['工单类型','type'],['工单名称','name'],['vip等级','vip'],['会员id','uid'],['状态',r=>STATE[r.state][0]],['提交时间','submit'],['操作时间','op'],['操作人','opMan'],['备注','remark'],['备注项','tag',true],['ip地址','ip']];
+  let h = '<thead><tr>' + cols.map(c => `<th class="${c[2]?'new-col':''}">${c[0]}${c[2]?'<span class="new">NEW</span>':''}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => { h += '<tr>' + cols.map(c => `<td class="${c[2]?'new-col':''}">${esc(typeof c[1]==='function'?c[1](r):r[c[1]])}</td>`).join('') + '</tr>'; });
+  $('#exp-table').innerHTML = h + '</tbody>';
+  show('exp-mask');
+  const nc = $('#exp-table th.new-col'), wrap = $('#exp-table').parentElement;
+  wrap.scrollLeft = nc.offsetLeft - wrap.clientWidth + nc.offsetWidth + 200;
+};
+
+/* ---------- 处理弹窗 ---------- */
+let cur = null, picked = '', editing = false;
+function openWO(id, edit){
+  cur = WO.find(r => r.id === id); picked = cur.tag; editing = edit;
+  const s = STATE[cur.state];
+  const d = [['工单号',`${cur.id} <span class="link">⧉</span>`,1],['工单类型',tag(cur.type,'info'),1],['提交时间',cur.submit],['状态',tag(s[0],s[1]),1],['操作时间',cur.op],['操作人',cur.opMan],['会员ID',`<span class="link">${cur.uid} ↗</span>`,1],['IP',cur.ip]];
+  $('#d-desc').innerHTML = d.map(x => `<div class="it"><span class="lb">${x[0]}</span><span class="vl">${x[2]?x[1]:esc(x[1])}</span></div>`).join('');
+  $('#d-remark').value = cur.remark; $('#d-remark').disabled = !edit; $('#d-remark').classList.remove('err');
+  $('#d-quick').innerHTML = QUICK.map(q => `<button class="qbtn" ${edit?'':'disabled'} data-q="${esc(q)}">${esc(q.length>18?q.slice(0,18)+'…':q)}</button>`).join('') + `<button class="qbtn ghost" ${edit?'':'disabled'}>上传图片/视频/PDF</button>`;
+  $('#d-fields').innerHTML = Object.entries(cur.f).map(([k,v]) => `<div class="row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('');
+  renderPick(); renderFoot(); show('wo-mask');
+}
+function renderPick(){
+  $('#d-pick').className = 'pick' + (editing ? '' : ' dis');
+  $('#d-pick').innerHTML = OPTS.map(o => `<span class="p ${picked===o?'on':''}" data-v="${esc(o)}"><span class="rd"></span>${esc(o)}</span>`).join('');
+}
+function renderFoot(){
+  const one = cur.type === '一对一客服', need = picked ? '' : 'disabled title="请先选择备注项"';
+  const hint = picked ? '' : '<span class="foot-hint">请先选择备注项</span>';
+  $('#d-foot').innerHTML = !editing ? '<button class="btn" data-close="wo-mask">关闭</button>'
+    : one ? `${hint}<button class="btn" style="background:#f0a020;border-color:#f0a020;color:#fff" data-act="4" ${need}>结束</button><button class="btn" data-close="wo-mask">取消</button><button class="btn primary" data-act="2">提交</button>`
+          : `${hint}<button class="btn" data-act="3" ${need}>驳回</button><button class="btn" data-close="wo-mask">取消</button><button class="btn primary" data-act="4" ${need}>确认</button>`;
+  bindClose();
+}
+$('#d-pick').onclick = e => {
+  const p = e.target.closest('.p'); if (!p || !editing) return;
+  picked = p.dataset.v; renderPick(); renderFoot();
+};
+$('#d-quick').onclick = e => { const q = e.target.dataset.q; if (q) { $('#d-remark').value = q; $('#d-remark').classList.remove('err'); } };
+$('#d-foot').onclick = e => {
+  const b = e.target.closest('button'); const a = b && b.dataset.act; if (!a || b.disabled) return;
+  const remark = $('#d-remark').value.trim();
+  if (!remark) { $('#d-remark').classList.add('err'); return toast('请输入备注', 'error'); }
+  cur.remark = remark; cur.op = now(); cur.opMan = ME;
+  if (a !== '2') { cur.state = +a; cur.tag = picked; }
+  hide('wo-mask'); toast('操作成功', 'success'); query();
+};
+
+/* ---------- 通用 ---------- */
+function show(id){ $('#'+id).classList.add('show'); }
+function hide(id){ $('#'+id).classList.remove('show'); }
+function bindClose(){ document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => hide(b.dataset.close)); }
+document.querySelectorAll('.mask').forEach(m => m.addEventListener('click', e => { if (e.target === m) hide(m.id); }));
+let tt;
+function toast(msg, type){
+  const c = {error:'#d03050', warning:'#f0a020', success:'#18a058'}[type] || '#2080f0';
+  $('#toast-dot').style.background = c; $('#toast-dot').textContent = type === 'success' ? '✓' : '!';
+  $('#toast-text').textContent = msg; $('#toast').classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 2400);
+}
+const openD = () => document.body.classList.add('dopen'), closeD = () => document.body.classList.remove('dopen');
+$('#handle').onclick = openD; $('#dmask').onclick = closeD; $('#dclose').onclick = closeD;
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.body.classList.contains('dopen')) return closeD();
+  const top = [...document.querySelectorAll('.mask.show')].pop(); if (top) hide(top.id);
+});
+
+bindClose(); renderWO();
+</script>
+</body>
+</html>
