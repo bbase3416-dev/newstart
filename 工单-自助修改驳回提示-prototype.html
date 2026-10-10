@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工单自助修改驳回提示原型</title>
+<style>
+:root{
+  --primary:#2080f0; --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb; --th:#fafafc;
+  --bg:#f3f4f6; --new:#e5484d;
+  /* 工单前台（会员端）配色 */
+  --h5-bg:#f7f8ff; --h5-card:#fff; --h5-box:#f1f2f6; --h5-text:#1e2637; --h5-text-2:#6f7381; --h5-text-3:#9da1ad;
+  --h5-red:#e5484d; --h5-green:#18b660; --h5-blue:#2f7cf6; --h5-orange:#f0a020;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg)}
+button,select{font-family:inherit}
+.page{padding:20px 56px 48px}
+@media (max-width:560px){.page{padding:16px 40px 40px}.phone,.col-note{width:100%}.col{width:100%}}
+.page-title{font-size:18px;font-weight:600;margin-bottom:12px}
+/* ===== 模拟控制条 ===== */
+.sim{border:1.5px dashed #e0b400;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:#7a5b00}
+.sim strong{color:#ad7f00}
+.sim label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;max-width:100%;min-width:0}
+.sim select{min-width:0;max-width:100%;height:28px;border:1px solid #e0c766;border-radius:3px;padding:0 8px;background:#fff;font-size:13px;color:var(--text)}
+/* ===== 双手机对比 ===== */
+.compare{display:flex;gap:40px;flex-wrap:wrap;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.col-h{font-size:14px;font-weight:600;color:var(--text-2);display:flex;align-items:center;gap:6px}
+.col-h.after{color:var(--text)}
+.phone{width:375px;max-width:calc(100vw - 32px);height:720px;background:var(--h5-bg);border-radius:28px;border:8px solid #1f2225;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.navbar{height:48px;flex:0 0 auto;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;font-size:16px;font-weight:600;color:var(--h5-text)}
+.navbar .back{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-left:2px solid var(--h5-text);border-bottom:2px solid var(--h5-text);transform:translateY(-50%) rotate(45deg)}
+.list{flex:1;overflow:auto;padding:10px}
+.item{background:var(--h5-card);border-radius:5px;padding:10px;margin-bottom:10px}
+.item-t{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--h5-text);line-height:1.4}
+.item-t .st{flex:0 0 auto}
+.st.rejected{color:var(--h5-red)}
+.st.processed{color:var(--h5-green)}
+.st.processing{color:var(--h5-orange)}
+.st.pending{color:var(--h5-blue)}
+.item-i{display:flex;flex-direction:column;color:var(--h5-text-3);font-size:12px;padding:5px 0;line-height:1.6}
+.item-r{min-height:62px;background:var(--h5-box);border-radius:5px;padding:6px;font-size:12px;color:var(--h5-text-2);line-height:1.5;word-break:break-word}
+.item.hl{outline:2px solid rgba(229,72,77,.55);outline-offset:0}
+.item-r.changed{background:#fff4f4;color:#b42318}
+.tbd{display:inline-block;margin-top:4px;font-size:11px;color:#ad7f00;background:#fffbe6;border:1px dashed #e0b400;border-radius:3px;padding:0 4px}
+.col-note{width:375px;max-width:calc(100vw - 32px);font-size:12px;color:var(--text-2);line-height:1.6;text-align:left}
+.phone-wrap{position:relative}
+.toast{position:absolute;left:50%;top:46%;transform:translateX(-50%);width:80%;background:rgba(0,0,0,.78);color:#fff;font-size:13px;line-height:1.5;border-radius:8px;padding:10px 14px;text-align:center;box-shadow:0 0 0 2px rgba(229,72,77,.7)}
+/* NEW 徽章 */
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;letter-spacing:.3px}
+/* ===== 需求说明抽屉 ===== */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--primary);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--primary)}
+.drawer-b h3:first-child{margin-top:0}
+.drawer-b ol{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top;text-align:left}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+.drawer-b .pending-box{margin-top:22px;border:1px dashed #e0b400;background:#fffbe6;border-radius:4px;padding:10px 14px}
+.drawer-b .pending-box h3{border-left-color:#e0b400;margin-top:0}
+</style>
+</head>
+<body>
+
+<main class="page">
+  <div class="page-title">工单前台 · 进度查询（Progress Query）</div>
+
+  <div class="sim">
+    <strong>模拟控制条（仅用于演示，不属于需求）</strong>
+    <label>工单类型
+      <select id="s-type">
+        <option value="ifsc">修改 IFSC</option>
+        <option value="bankname">修改银行名称</option>
+        <option value="delbank">删除银行卡自动化</option>
+        <option value="delusdt">删除 USDT 自动化</option>
+        <option value="delupi">删除电子钱包自动化</option>
+      </select>
+    </label>
+    <label>会员情况
+      <select id="s-case"></select>
+    </label>
+  </div>
+
+  <div class="compare">
+    <div class="col">
+      <div class="col-h">现状</div>
+      <div class="phone">
+        <div class="navbar"><i class="back"></i>Progress Query</div>
+        <div class="list" id="before"></div>
+      </div>
+      <div class="col-note" id="before-note"></div>
+    </div>
+    <div class="col">
+      <div class="col-h after">改造后<span class="new">NEW</span></div>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="navbar"><i class="back"></i>Progress Query</div>
+          <div class="list" id="after"></div>
+        </div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+      <div class="col-note" id="after-note"></div>
+    </div>
+  </div>
+</main>
+
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">来源：充值订单自动申诉需求对接群（Rebecca，2026-10-08）</p>
+
+    <h3>一、改造页面</h3>
+    <table>
+      <tr><th>端</th><th>页面</th><th>新增/改造</th><th>改动点</th></tr>
+      <tr><td>工单前台</td><td>进度查询</td><td>改造</td><td>修改 IFSC、修改银行名称、删除银行卡自动化、删除 USDT 自动化、删除电子钱包自动化五类工单，系统驳回时按失败原因显示提示</td></tr>
+      <tr><td>工单前台</td><td>工单提交</td><td>改造</td><td>同一类型已有未结案工单时，不允许再提交</td></tr>
+    </table>
+
+    <h3>二、功能描述与业务规则</h3>
+    <ol>
+      <li>系统自动处理失败时，按失败原因显示驳回提示，其余失败原因沿用现有提示：
+        <table>
+          <tr><th>工单类型</th><th>未绑定对应账户</th><th>提交的卡号与已绑定卡号不一致</th></tr>
+          <tr><td>修改 IFSC</td><td>IFSC change failed, you have not tied Bank</td><td>IFSC change failed, Please submit correct bank account number</td></tr>
+          <tr><td>修改银行名称</td><td>Change Bank Name failed, you have not tied Bank</td><td>Change Bank Name failed, Please submit correct bank account number</td></tr>
+          <tr><td>删除银行卡自动化</td><td>Modification failed, you have not tied Bank</td><td>—</td></tr>
+          <tr><td>删除 USDT 自动化</td><td>Modification failed, you have not tied USDT address</td><td>—</td></tr>
+          <tr><td>删除电子钱包自动化</td><td>Modification failed, you have not tied UPI</td><td>—</td></tr>
+        </table>
+      </li>
+      <li>规则 1 的提示需支持工单系统现有语言，翻译见「AR多语言翻译文档 › 工单系统多语言」第 4～10 行。</li>
+      <li>会员提交以下类型工单时，若本人同一类型已有未结案工单（已驳回、已处理以外的状态，即系统处理中 / 待处理 / 处理中），不允许提交，提示沿用现有重复提交文案（The same type of work order is in progress, please do not submit it repeatedly.）：修改 IFSC、修改银行名称、删除银行卡、删除银行卡自动化、删除 USDT、删除 USDT 自动化、删除电子钱包、删除电子钱包自动化。</li>
+      <li>规则 3 按工单类型分别判断，人工版与自动化版互不影响。</li>
+    </ol>
+
+    <h3>三、限制条件</h3>
+    <ol>
+      <li>本次不做：提交前校验会员是否已绑定账户；「全部取款方式」的驳回提示。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+var TYPES = {
+  ifsc:     { name:'IFSC Modification', fail:'IFSC Change Failed', ok:'IFSC Change Success',
+              unbound:'IFSC change failed, you have not tied Bank',
+              mismatch:'IFSC change failed, Please submit correct bank account number' },
+  bankname: { name:'Change Bank Name', fail:'Bank Name Modify Failed', ok:'Bank Name Modify Success',
+              unbound:'Change Bank Name failed, you have not tied Bank',
+              mismatch:'Change Bank Name failed, Please submit correct bank account number' },
+  delbank:  { name:'Self-service Delete Bank Account and Rebind', fail:'Modification failed', ok:'Bank information has been deleted',
+              unbound:'Modification failed, you have not tied Bank' },
+  delusdt:  { name:'Self-service to Delete Old USDT Address and Rebind', fail:'Modification failed', ok:'USDT address has been deleted',
+              unbound:'Modification failed, you have not tied USDT address' },
+  delupi:   { name:'Self-service UPI E-wallet Delete & Rebind', fail:'Modification failed', ok:'E-wallet has been deleted',
+              unbound:'Modification failed, you have not tied UPI' }
+};
+var CASES = {
+  unbound:  '未绑定对应账户',
+  mismatch: '卡号与已绑定卡号不一致',
+  dupWait:  '同类工单还在处理中，再次提交'
+};
+var STATUS = { rejected:'Rejected', processed:'Success', pending:'Pending', processing:'Processing', system:'system Pending' };
+var DUP_MSG = 'The same type of work order is in progress, please do not submit it repeatedly.';
+
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function card(o){
+  return '<div class="item' + (o.hl ? ' hl' : '') + '">' +
+    '<div class="item-t"><span>' + esc(o.name) + '</span><span class="st ' + o.st + '">' + STATUS[o.st] + '</span></div>' +
+    '<div class="item-i"><span>Time: ' + o.time + '</span><span>Order: ' + o.no + '</span></div>' +
+    '<div class="item-r' + (o.changed ? ' changed' : '') + '">' + esc(o.remark) + '</div>' +
+    '</div>';
+}
+
+function fillCases(){
+  var t = $('s-type').value, sel = $('s-case'), cur = sel.value;
+  var keys = Object.keys(CASES).filter(function(k){ return k !== 'mismatch' || TYPES[t].mismatch; });
+  sel.innerHTML = keys.map(function(k){ return '<option value="' + k + '">' + CASES[k] + '</option>'; }).join('');
+  if (keys.indexOf(cur) > -1) sel.value = cur;
+}
+
+function render(){
+  var t = TYPES[$('s-type').value], c = $('s-case').value;
+  var nNew = '2610091733' + '7059119', nOld = '2610091732' + '4410382';
+  var b = [], a = [], bn = '', an = '';
+  $('toast').hidden = true;
+
+  if (c === 'unbound' || c === 'mismatch') {
+    b.push(card({ name:t.name, st:'rejected', time:'2026-10-09 17:33:17', no:nNew, remark:t.fail }));
+    a.push(card({ name:t.name, st:'rejected', time:'2026-10-09 17:33:17', no:nNew, remark:t[c], hl:true, changed:true }));
+    bn = '所有失败原因都显示同一句提示，会员不知道为什么失败。';
+    an = '按失败原因显示对应提示。';
+  } else {
+    var prev = { name:t.name, st:'system', time:'2026-10-09 17:32:44', no:nOld, remark:'Processing, please be patient' };
+    b.push(card({ name:t.name, st:'system', time:'2026-10-09 17:33:17', no:nNew, remark:'Processing, please be patient' }));
+    b.push(card(prev));
+    a.push(card(prev));
+    $('toast').textContent = DUP_MSG;
+    $('toast').hidden = false;
+    bn = '同一类型可以连续提交，产生重复工单。';
+    an = '不允许提交，弹出现有的重复提交提示，不会产生新工单。';
+  }
+  $('before').innerHTML = b.join('');
+  $('after').innerHTML = a.join('');
+  $('before-note').textContent = bn;
+  $('after-note').textContent = an;
+}
+
+$('s-type').addEventListener('change', function(){ fillCases(); render(); });
+$('s-case').addEventListener('change', render);
+fillCases(); render();
+
+/* 抽屉：把手 / 遮罩 / ✕ / Esc */
+function openD(){ document.body.classList.add('dopen'); }
+function closeD(){ document.body.classList.remove('dopen'); }
+$('handle').addEventListener('click', openD);
+$('dmask').addEventListener('click', closeD);
+$('dclose').addEventListener('click', closeD);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeD(); });
+</script>
+</body>
+</html>
