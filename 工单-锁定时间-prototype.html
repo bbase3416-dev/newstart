@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工单锁定时间</title>
+<style>
+:root{
+  --primary:#2080f0; --primary-hover:#4098fc; --primary-soft:rgba(32,128,240,.1); --primary-line:rgba(32,128,240,.3);
+  --success:#18a058; --success-soft:rgba(24,160,88,.1); --success-line:rgba(24,160,88,.3);
+  --warning:#f0a020; --warning-soft:rgba(240,160,32,.12); --warning-line:rgba(240,160,32,.35);
+  --error:#d03050; --error-soft:rgba(208,48,80,.08); --error-line:rgba(208,48,80,.3);
+  --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb; --line-2:#efeff5;
+  --bg:#f3f4f6; --card:#fff; --th:#fafafc; --new:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-width:1280px}
+button{font-family:inherit}
+.topbar{height:60px;background:#fff;display:flex;align-items:center;padding:0 40px;box-shadow:0 1px 4px rgba(0,21,41,.06);position:relative;z-index:5}
+.logo{width:30px;height:30px;border-radius:8px;background:#f06a5b;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.brand{margin-left:10px;font-weight:600}
+.clock{margin-left:28px;color:var(--text-2)}
+.nav{display:flex;gap:40px;margin-left:80px}
+.nav span{color:var(--text-2)}
+.nav span.on{color:var(--primary)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:18px;color:var(--text-2);font-size:13px}
+.top-right b{color:var(--error);font-weight:400}
+.avatar{width:30px;height:30px;border-radius:50%;background:#f06a5b}
+.tabsbar{display:flex;gap:6px;padding:8px 40px 0}
+.ptab{height:32px;padding:0 12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;color:var(--text-2);font-size:13px}
+.ptab.on{background:var(--primary);color:#fff}
+.ptab i{font-style:normal;font-size:11px;opacity:.7}
+.page{padding:10px 40px 40px}
+.card{background:var(--card);border-radius:4px;padding:18px 24px}
+.card+.card{margin-top:10px}
+.card-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.btn{height:34px;padding:0 16px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;letter-spacing:.3px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line-2);border-radius:3px}
+table.tbl{border-collapse:collapse;width:max-content;min-width:100%}
+.tbl th{background:var(--th);font-weight:500;text-align:center;padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);white-space:nowrap;font-size:13px}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);text-align:left;vertical-align:middle;font-size:13px;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.c{text-align:center}
+.sticky-r{position:sticky;right:0;background:#fff;box-shadow:-4px 0 6px -4px rgba(0,0,0,.12)}
+th.sticky-r{background:var(--th)}
+.muted{color:var(--text-3)}
+.link{color:var(--primary);cursor:pointer}
+.link+.link{margin-left:12px}
+.mono{font-variant-numeric:tabular-nums}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;font-size:12px;border:1px solid var(--line);background:#fafafc;color:var(--text-2);white-space:nowrap}
+.tag.info{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-line)}
+.tag.success{color:var(--success);background:var(--success-soft);border-color:var(--success-line)}
+.tag.warning{color:#d68a0c;background:var(--warning-soft);border-color:var(--warning-line)}
+.tag.error{color:var(--error);background:var(--error-soft);border-color:var(--error-line)}
+/* 工单详情（模拟产品功能：居中弹窗） */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:6px;width:min(1180px,92vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.modal-h{padding:16px 22px;font-weight:600;font-size:17px;display:flex;align-items:center}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:18px;font-weight:400}
+.modal-b{padding:0 22px 20px;overflow:auto;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}
+.pane{border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:20px}
+.di{display:flex;align-items:center;gap:6px;min-height:34px;font-size:13px;min-width:0}
+.di .lb{color:var(--text-2);white-space:nowrap}
+.di .vl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.di.span2{grid-column:span 2}
+.di.is-new{background:#fffafa;outline:1.5px dashed rgba(229,72,77,.6);outline-offset:-1px;border-radius:3px;padding:0 6px;margin:2px 0}
+.di.is-new .vl{flex:0 0 auto;overflow:visible}
+.sec{margin-top:12px;font-size:13px;color:var(--text-2)}
+.remark{margin-top:6px;border:1px solid var(--line);border-radius:3px;background:#fafafc;padding:10px 12px;color:var(--text-3);font-size:13px;min-height:54px}
+.ri{font-size:13px;line-height:2.2}
+.ri .lb{color:var(--text-2)}
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);border-radius:4px;padding:10px 16px;font-size:13px;display:none;z-index:90}
+.toast.show{display:block}
+/* 需求说明抽屉 */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--primary);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--primary)}
+.drawer-b ol{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">AR</div><span class="brand">AR</span>
+  <span class="clock">2026-10-28 12:09</span>
+  <nav class="nav"><span>PWA管理</span><span class="on">工单管理</span><span>KYC模块</span><span>内容管理</span><span>系统设置</span></nav>
+  <div class="top-right"><span>系统处理中: <b>50</b></span><span>待处理: <b id="pend">2</b></span><i class="avatar"></i><span id="me">ar044jjcd001</span></div>
+</header>
+
+<div class="tabsbar">
+  <div class="ptab on">工单列表 <i>✕</i></div>
+  <div class="ptab">工单配置 <i>✕</i></div>
+</div>
+
+<main class="page">
+  <section class="card">
+    <div class="card-title">工单管理</div>
+  </section>
+  <section class="card">
+    <div class="tbl-wrap"><table class="tbl" id="tbl"></table></div>
+  </section>
+</main>
+
+<!-- 工单详情（照真实页面：居中弹窗） -->
+<div class="mask" id="dmodal">
+  <div class="modal">
+    <div class="modal-h">工单详情<span class="x" id="mclose">✕</span></div>
+    <div class="modal-b">
+      <div class="pane">
+        <div class="dgrid" id="dgrid"></div>
+        <div class="sec">备注（会员可见）</div>
+        <div class="remark" id="dremark"></div>
+      </div>
+      <div class="pane" id="dright"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">带 <span class="new">NEW</span> 的为本次改动。</p>
+
+    <h3>改造点</h3>
+    <table>
+      <tr><th style="width:220px">页面</th><th>改动</th></tr>
+      <tr><td>工单管理 → 工单详情</td><td>「提交时间」与「操作时间」之间新增「锁定时间」</td></tr>
+    </table>
+
+    <h3>业务规则</h3>
+    <ol>
+      <li>锁定时间：工单最近一次被锁定（待处理 → 处理中）的时间，适用于所有工单类型。</li>
+      <li>工单被解锁时清空锁定时间；再次锁定时记录新的锁定时间。</li>
+      <li>没有锁定时间时显示「--」。</li>
+      <li>时间格式和时区与「提交时间」一致。</li>
+      <li>多语言：中文「锁定时间」；英文「Lock Time」；缅甸语按多语言翻译文档补充。</li>
+    </ol>
+
+    <h3>限制条件</h3>
+    <ol>
+      <li>上线前的工单不补历史数据。</li>
+      <li>只改工单详情，工单列表和导出不改。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+const STATE = {5:['系统处理中','info'],1:['待处理','warning'],2:['处理中','info'],3:['已驳回','error'],4:['已处理','success']};
+const ME = 'ar044jjcd001';
+const WO = [
+  {id:'2610280429571088956',type:'存款未到账',uid:'92893',state:4,third:'WavePay-KING',sub:'2026-10-28 10:59:57',lock:'2026-10-28 11:00:40',upd:'2026-10-28 11:01:35',man:'ar044jjcd001',amt:'1000000',name:'May Myo Myat',ord:'RC20261028105356651044044'},
+  {id:'2610281135204417702',type:'存款未到账',uid:'88412',state:2,third:'KBZPay-QR',sub:'2026-10-28 11:35:20',lock:'2026-10-28 11:36:02',upd:'2026-10-28 11:36:02',man:'ar044jjcd001',amt:'50000',name:'Aung Ko Ko',ord:'RC20261028113412880144031'},
+  {id:'2610281058116630915',type:'取款未到账',uid:'73005',state:4,third:'WavePay-KING',sub:'2026-10-28 10:58:11',lock:'2026-10-28 11:40:08',upd:'2026-10-28 11:45:30',man:'ar044kefu02',amt:'300000',name:'Thida Win',ord:'WD20261028104922310144007'},
+  {id:'2610281102447781320',type:'存款未到账',uid:'61277',state:3,third:'KBZPay-QR',sub:'2026-10-28 11:02:44',lock:'',upd:'2026-10-28 11:20:03',man:'ar044jjcd001',amt:'20000',name:'Hla Hla',ord:'RC20261028110005771044090'},
+  {id:'2610281141009923456',type:'USDT存款未到账',uid:'55190',state:1,third:'USDT-TRC20',sub:'2026-10-28 11:41:00',lock:'',upd:'2026-10-28 11:52:16',man:'ar044kefu02',amt:'100',name:'--',ord:'RC20261028113855120144012'},
+  {id:'2610281148306651207',type:'存款未到账',uid:'40918',state:1,third:'KBZPay-QR',sub:'2026-10-28 11:48:30',lock:'',upd:'',man:'',amt:'30000',name:'Kyaw Zin',ord:'RC20261028114602318144056'},
+  {id:'2610271630551204408',type:'存款未到账',uid:'39051',state:4,third:'WavePay-KING',sub:'2026-10-27 16:30:55',lock:'',upd:'2026-10-27 16:41:09',man:'ar044jjcd001',amt:'80000',name:'Zaw Min',ord:'RC20261027162733650144088'},
+];
+const tag = (t, c) => `<span class="tag ${c}">${t}</span>`;
+const now = () => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `2026-10-28 ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+function render(){
+  let h = `<thead><tr><th>工单号</th><th>工单类型</th><th>会员id</th><th>状态</th><th>三方名称</th><th>提交时间</th><th>操作时间</th><th>操作人</th><th class="sticky-r">操作</th></tr></thead><tbody>`;
+  WO.forEach(w => {
+    const act = w.state === 1 ? `<span class="link" data-lock="${w.id}">锁定</span>` : w.state === 2 ? `<span class="link" data-unlock="${w.id}">解锁</span>` : '';
+    h += `<tr>
+      <td class="mono">${w.id}</td>
+      <td>${w.type}</td><td><span class="link">${w.uid}</span></td>
+      <td class="c">${tag(...STATE[w.state])}</td><td>${w.third || '--'}</td>
+      <td class="mono">${w.sub}</td><td class="mono">${w.upd || '--'}</td><td>${w.man || '--'}</td>
+      <td class="sticky-r"><span class="link" data-detail="${w.id}">详情</span>${act}</td>
+    </tr>`;
+  });
+  $('#tbl').innerHTML = h + '</tbody>';
+  $('#pend').textContent = WO.filter(w => w.state === 1).length;
+}
+function openDetail(id){
+  const w = WO.find(x => x.id === id);
+  const it = (lb, vl, cls = '') => `<div class="di ${cls}"><span class="lb">${lb}：</span><span class="vl">${vl}</span></div>`;
+  $('#dgrid').innerHTML =
+      it('工单号', `<span class="mono">${w.id}</span>`) + it('工单类型', tag(w.type,'info'))
+    + it('提交时间', `<span class="mono">${w.sub}</span>`) + it('工单状态', tag(...STATE[w.state]))
+    + `<div class="di span2 is-new"><span class="lb">锁定时间<span class="new">NEW</span>：</span><span class="vl mono">${w.lock || '--'}</span></div>`
+    + it('操作时间', `<span class="mono">${w.upd || '--'}</span>`) + it('操作人', w.man || '--')
+    + it('会员id', `<span class="link">${w.uid} ↗</span>`) + it('三方转发状态', w.state >= 3 ? '已回复' : '--')
+    + it('ip', '2a09:bac3:43a1:1e14::2ff:36') + it('收款账号', '--');
+  $('#dremark').textContent = w.state === 4 ? 'Deposit has been credited (previously delayed, now credited).' : '';
+  $('#dright').innerHTML = w.ord
+    ? `<div class="ri"><span class="lb">三方通道：</span>${w.third}</div><div class="ri"><span class="lb">Deposit Amount：</span>${w.amt}</div><div class="ri"><span class="lb">Full Name Of Deposit Sender：</span>${w.name}</div><div class="ri"><span class="lb">Order Number：</span><span class="mono">${w.ord}</span></div>`
+    : '';
+  $('#dmodal').classList.add('show');
+}
+let tt;
+function toast(msg){ $('#toast').textContent = msg; $('#toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 2000); }
+$('#tbl').addEventListener('click', e => {
+  const d = e.target.closest('[data-detail]'); if (d) return openDetail(d.dataset.detail);
+  const l = e.target.closest('[data-lock]');
+  if (l) { const w = WO.find(x => x.id === l.dataset.lock), t = now(); Object.assign(w, {state:2, lock:t, upd:t, man:ME}); render(); return toast('锁定成功'); }
+  const u = e.target.closest('[data-unlock]');
+  if (u) { const w = WO.find(x => x.id === u.dataset.unlock); Object.assign(w, {state:1, lock:'', upd:now(), man:ME}); render(); return toast('取消锁定成功'); }
+});
+const closeM = () => $('#dmodal').classList.remove('show');
+$('#mclose').onclick = closeM;
+$('#dmodal').addEventListener('click', e => { if (e.target.id === 'dmodal') closeM(); });
+const openD = () => document.body.classList.add('dopen');
+const closeD = () => document.body.classList.remove('dopen');
+$('#handle').onclick = openD; $('#dmask').onclick = closeD; $('#dclose').onclick = closeD;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeD(); closeM(); } });
+render();
+</script>
+</body>
+</html>
