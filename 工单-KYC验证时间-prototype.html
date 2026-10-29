@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工单KYC验证时间</title>
+<style>
+:root{
+  --primary:#2080f0; --primary-hover:#4098fc; --primary-soft:rgba(32,128,240,.1); --primary-line:rgba(32,128,240,.3);
+  --success:#18a058; --success-soft:rgba(24,160,88,.1); --success-line:rgba(24,160,88,.3);
+  --warning:#f0a020; --warning-soft:rgba(240,160,32,.12); --warning-line:rgba(240,160,32,.35);
+  --error:#d03050; --error-soft:rgba(208,48,80,.08); --error-line:rgba(208,48,80,.3);
+  --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb; --line-2:#efeff5;
+  --bg:#f3f4f6; --card:#fff; --th:#fafafc; --new:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-width:1280px}
+button{font-family:inherit}
+/* ===== 顶部导航 ===== */
+.topbar{height:60px;background:#fff;display:flex;align-items:center;padding:0 40px;box-shadow:0 1px 4px rgba(0,21,41,.06);position:relative;z-index:5}
+.logo{width:30px;height:30px;border-radius:8px;background:#f06a5b;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.brand{margin-left:10px;font-weight:600}
+.clock{margin-left:28px;color:var(--text-2)}
+.nav{display:flex;gap:40px;margin-left:80px}
+.nav span{color:var(--text-2);cursor:default}
+.nav span.on{color:var(--primary)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:18px;color:var(--text-2);font-size:13px}
+.top-right b{color:var(--error);font-weight:400}
+.switch{width:40px;height:22px;border-radius:11px;background:#dbdbdf;position:relative;display:inline-block;vertical-align:middle;margin-right:6px}
+.switch:after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff}
+.avatar{width:30px;height:30px;border-radius:50%;background:#f06a5b}
+/* ===== 多页签 ===== */
+.tabsbar{display:flex;gap:6px;padding:8px 40px 0;background:var(--bg)}
+.ptab{height:32px;padding:0 12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;cursor:pointer;color:var(--text-2);font-size:13px}
+.ptab.on{background:var(--primary);color:#fff}
+.ptab i{font-style:normal;font-size:11px;opacity:.7}
+/* ===== 页面 ===== */
+.page{padding:10px 40px 40px}
+.card{background:var(--card);border-radius:4px;padding:18px 24px}
+.card+.card{margin-top:10px}
+.card-title{font-size:18px;font-weight:600;margin-bottom:16px}
+.form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));column-gap:18px;row-gap:14px}
+.fi{display:flex;align-items:center;gap:10px;min-width:0}
+.fi label{flex:0 0 86px;text-align:right;color:var(--text);font-size:13px;line-height:1.3}
+.fi .ctl{flex:1;min-width:0}
+.fi.span2{grid-column:span 2}
+.inp,.sel{width:100%;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
+.inp::placeholder{color:#c2c2c2}
+.sel{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3l4 4 4-4' fill='none' stroke='%23b0b0b0' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:26px;cursor:pointer}
+.sel.empty{color:#c2c2c2}
+.inp:focus,.sel:focus{border-color:var(--primary)}
+.range{display:flex;align-items:center;gap:6px}
+.range .inp{flex:1}
+.date{display:flex;align-items:center;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);gap:10px;white-space:nowrap;overflow:hidden}
+.date span{flex:1;text-align:center}
+.date .ph{color:#c2c2c2}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.btn{height:34px;padding:0 16px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-hover)}
+.btn.disabled{background:#a6cbf6;border-color:#a6cbf6;color:#fff;cursor:not-allowed}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+/* NEW 徽章 */
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;letter-spacing:.3px}
+.fi.is-new .sel,.fi.is-new .inp{border-color:rgba(229,72,77,.55);box-shadow:0 0 0 2px rgba(229,72,77,.08)}
+/* ===== 表格 ===== */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line-2);border-radius:3px}
+table.tbl{border-collapse:collapse;width:max-content;min-width:100%}
+.tbl th{background:var(--th);font-weight:500;text-align:center;padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);white-space:nowrap;font-size:13px}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);text-align:left;vertical-align:middle;font-size:13px;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.c{text-align:center}
+.tbl th.new-col{background:#fff4f4}
+.tbl td.new-col{background:#fffafa}
+.ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sticky-r{position:sticky;right:0;background:#fff;box-shadow:-4px 0 6px -4px rgba(0,0,0,.12)}
+th.sticky-r{background:var(--th)}
+.muted{color:var(--text-3)}
+.link{color:var(--primary);cursor:pointer}
+.mono{font-variant-numeric:tabular-nums}
+.acct{display:inline-block;margin-top:4px;padding:0 6px;border:1px solid var(--warning-line);background:var(--warning-soft);color:#c77c02;border-radius:3px;font-size:12px}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;font-size:12px;border:1px solid var(--line);background:#fafafc;color:var(--text-2);white-space:nowrap}
+.tag.info{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-line)}
+.tag.success{color:var(--success);background:var(--success-soft);border-color:var(--success-line)}
+.tag.warning{color:#d68a0c;background:var(--warning-soft);border-color:var(--warning-line)}
+.tag.error{color:var(--error);background:var(--error-soft);border-color:var(--error-line)}
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--text-2)}
+.pager .pg{width:28px;height:28px;border:1px solid var(--line);border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--text-3)}
+.pager .pg.on{border-color:var(--primary);color:var(--primary)}
+.empty-row td{text-align:center!important;color:var(--text-3);padding:30px}
+/* 子页签（KYC） */
+.subtabs{display:flex;gap:8px}
+.subtab{height:36px;padding:0 16px;display:flex;align-items:center;border-radius:4px;cursor:pointer;color:var(--text);font-size:14px}
+.subtab.on{background:var(--primary);color:#fff;font-weight:500}
+/* ===== 模拟控制条 ===== */
+.sim{border:1.5px dashed #e0b400;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:#7a5b00}
+.sim strong{color:#ad7f00}
+.sim .inp,.sim .sel{height:28px;width:auto}
+/* ===== 弹窗（模拟产品功能） ===== */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:6px;width:min(1100px,92vw);max-height:84vh;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.modal-h{padding:16px 22px;font-weight:600;font-size:16px;display:flex;align-items:center}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:18px;font-weight:400}
+.modal-b{padding:0 22px 8px;overflow:auto}
+.modal-f{padding:12px 22px 18px;display:flex;justify-content:flex-end;gap:10px}
+.demo-note{font-size:12px;color:#7a5b00;background:#fffbe6;border:1px dashed #e0b400;padding:6px 10px;border-radius:3px;margin-bottom:10px}
+/* 消息提示 */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);border-radius:4px;padding:10px 16px;font-size:13px;display:none;align-items:center;gap:8px;z-index:90}
+.toast.show{display:flex}
+.toast .dot{width:16px;height:16px;border-radius:50%;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+/* ===== 需求说明抽屉 ===== */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--primary);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--primary)}
+.drawer-b h3:first-child{margin-top:0}
+.drawer-b ol,.drawer-b ul{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+
+.idline{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.cp{width:14px;height:14px;cursor:pointer;color:var(--primary);flex:0 0 auto}
+.new-box{outline:1.5px dashed rgba(229,72,77,.6);outline-offset:2px;border-radius:2px}
+.kyc-cell{display:flex;flex-direction:column;align-items:center;gap:6px}
+.kyc-cell .tag{cursor:pointer}
+.vtime{font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;padding:0 2px}
+/* 工单详情弹窗 */
+.dlg{width:min(980px,92vw)}
+.desc{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line-2);border-radius:3px}
+.desc .it{display:flex;border-bottom:1px solid var(--line-2);min-height:40px}
+.desc .it:nth-child(odd){border-right:1px solid var(--line-2)}
+.desc .lb{flex:0 0 160px;white-space:nowrap;background:var(--th);padding:10px 12px;color:var(--text-2);font-size:13px;display:flex;align-items:center}
+.desc .vl{flex:1;padding:10px 12px;font-size:13px;display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap}
+.desc .it.is-new .lb{background:#fff4f4}
+.desc .it.is-new .vl{background:#fffafa}
+.case{color:var(--text-3);font-size:12px;margin-top:4px;white-space:normal;max-width:220px}
+.view{display:none}.view.on{display:block}
+.filter-tip{font-size:13px;color:var(--text-2);margin-bottom:10px}
+.filter-tip b{color:var(--primary);font-weight:500}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">AR</div><span class="brand">AR</span>
+  <span class="clock">2026-10-21 17:42</span>
+  <nav class="nav"><span>PWA管理</span><span class="on">工单管理</span><span>KYC模块</span><span>内容管理</span><span>系统设置</span></nav>
+  <div class="top-right"><span><i class="switch"></i>自动刷新</span><span>系统处理中: <b>173</b></span><span>待处理: <b>8</b></span><i class="avatar"></i><span>luna002</span></div>
+</header>
+
+<div class="tabsbar">
+  <div class="ptab">Welcome <i>✕</i></div>
+  <div class="ptab on" data-page="all">工单列表 <i>✕</i></div>
+  <div class="ptab" data-page="wait">待处理工单 <i>✕</i></div>
+  <div class="ptab" data-page="flow">KYC交易流水列表 <i>✕</i></div>
+</div>
+
+<main class="page">
+  <!-- ===== 工单列表 / 待处理工单 ===== -->
+  <div class="view on" id="v-wo">
+  <section class="card">
+    <div class="card-title" id="title">工单管理</div>
+    <div class="form">
+      <div class="fi"><label>会员账号</label><div class="ctl"><input class="inp" placeholder="请输入会员账号,Id,邮箱查询"></div></div>
+      <div class="fi"><label>工单号</label><div class="ctl"><input class="inp" placeholder="请输入工单号"></div></div>
+      <div class="fi"><label>三方名称</label><div class="ctl"><input class="inp" placeholder="请输入三方名称"></div></div>
+      <div class="fi"><label>订单号</label><div class="ctl"><input class="inp" placeholder="请输入订单号"></div></div>
+      <div class="fi kyc-only"><label>KYC连接</label><div class="ctl"><select class="sel empty"><option>请选择</option></select></div></div>
+      <div class="fi" id="f-state-w"><label>状态</label><div class="ctl"><select class="sel" id="f-state"><option value="">全部</option><option value="5">系统处理中</option><option value="1">待处理</option><option value="2">处理中</option><option value="3">已驳回</option><option value="4">已处理</option></select></div></div>
+      <div class="fi"><label>工单类型</label><div class="ctl"><select class="sel empty" id="f-type"><option value="">请选择工单类型</option><option>存款未到账</option><option>USDT存款未到账</option><option>取款未到账</option><option>删除银行卡</option></select></div></div>
+      <div class="fi"><label>vip等级</label><div class="ctl"><select class="sel empty"><option>请选择Vip等级</option></select></div></div>
+      <div class="fi span2"><label>提交时间</label><div class="ctl"><div class="date"><span>2026-10-20 00:00:00</span><span class="muted">→</span><span>2026-10-21 23:59:59</span></div></div></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="q">查询</button><button class="btn" id="r">重置</button></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <button class="btn primary">导出</button>
+      <button class="btn disabled">批量三方查询</button>
+      <button class="btn primary">批量驳回</button>
+      <button class="btn primary">批量生成</button>
+      <button class="btn primary">模版下载</button>
+      <button class="btn disabled">批量转发</button>
+      <button class="btn disabled">评论导出</button>
+      <button class="btn primary">提交工单</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl" id="tbl"></table></div>
+    <div class="pager"><span id="total"></span><span class="pg">‹</span><span class="pg on">1</span><span class="pg">›</span></div>
+  </section>
+  </div>
+
+  <!-- ===== KYC交易流水列表 ===== -->
+  <div class="view" id="v-flow">
+  <section class="card">
+    <div class="subtabs" style="margin-bottom:16px"><div class="subtab on" data-sub="normal">KYC交易流水</div><div class="subtab" data-sub="abn">KYC异常流水</div></div>
+    <div class="form">
+      <div class="fi"><label>工单号</label><div class="ctl"><input class="inp" id="ff-wo" placeholder="请输入工单号"></div></div>
+      <div class="fi"><label>会员ID</label><div class="ctl"><input class="inp" placeholder="请输入会员ID"></div></div>
+      <div class="fi"><label>付款账号</label><div class="ctl"><input class="inp" placeholder="请输入付款账号"></div></div>
+      <div class="fi"><label>手机号</label><div class="ctl"><input class="inp" placeholder="请输入手机号"></div></div>
+      <div class="fi"><label>UTR</label><div class="ctl"><input class="inp" placeholder="请输入UTR"></div></div>
+      <div class="fi span2"><label>交易时间</label><div class="ctl"><div class="date"><span class="ph">开始时间</span><span class="muted">→</span><span class="ph">结束时间</span></div></div></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="fq">查询</button><button class="btn" id="fr">重置</button></div>
+  </section>
+  <section class="card">
+    <div class="toolbar"><button class="btn primary">导出</button></div>
+    <div class="filter-tip" id="ftip"></div>
+    <div class="tbl-wrap"><table class="tbl" id="ftbl"></table></div>
+    <div class="pager"><span id="ftotal"></span><span class="pg">‹</span><span class="pg on">1</span><span class="pg">›</span></div>
+  </section>
+  </div>
+</main>
+
+<!-- 工单详情（模拟产品功能：居中弹窗） -->
+<div class="mask" id="dmodal">
+  <div class="modal dlg">
+    <div class="modal-h">工单详情<span class="x" id="mclose">✕</span></div>
+    <div class="modal-b"><div class="desc" id="desc"></div></div>
+    <div class="modal-f"><button class="btn" id="mcancel">关闭</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot" id="toast-dot">!</span><span id="toast-text"></span></div>
+
+<!-- 需求说明抽屉 -->
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">带 <span class="new">NEW</span> 和红色虚线框的为本次改动。</p>
+
+    <h3>改造点</h3>
+    <table>
+      <tr><th style="width:230px">页面</th><th>改动</th></tr>
+      <tr><td>工单管理 → 工单列表、待处理工单</td><td>「KYC连接」列标题改为「KYC连接 / 验证时间」，连接状态下方显示 KYC验证时间</td></tr>
+      <tr><td>工单详情</td><td>「KYC连接」项改为「KYC连接 / 验证时间」，连接状态后显示 KYC验证时间</td></tr>
+      <tr><td>KYC模块 → KYC交易流水列表（KYC交易流水、KYC异常流水）</td><td>「交易时间」列后新增「拉取时间」列</td></tr>
+    </table>
+
+    <h3>业务规则</h3>
+    <ol>
+      <li>KYC验证时间：会员 KYC 验证码（OTP）最近一次验证通过的时间，适用于存款未到账、取款未到账工单。
+        <ul>
+          <li>会员提交工单时完成验证的，写入该工单。</li>
+          <li>会员提交工单后再完成验证的，写入该会员近 7 天内提交、KYC 未连接的存款未到账、取款未到账工单，已有时间的更新为本次时间；KYC 已连接的工单不更新。</li>
+        </ul>
+      </li>
+      <li>拉取时间：钱包第一次拉取到该条流水的时间，以钱包记录的拉取时间为准，不是流水的交易时间；该条流水之后更新不改变拉取时间。</li>
+      <li>写入 KYC验证时间不改变工单的「操作时间」。</li>
+      <li>没有 KYC验证时间的工单只显示连接状态；没有拉取时间的流水显示「--」。</li>
+      <li>时间格式和时区：KYC验证时间与「提交时间」一致，拉取时间与「交易时间」一致。</li>
+      <li>KYC 交易流水、KYC 异常流水导出同步带出「拉取时间」列；工单列表导出的列标题和内容不变。</li>
+      <li>多语言：中文「KYC连接 / 验证时间」「拉取时间」；英文「KYC Link Status / Verification Time」「Pull Time」；缅甸语按多语言翻译文档补充。</li>
+    </ol>
+
+    <h3>限制条件</h3>
+    <ol>
+      <li>上线前提交的工单、上线前已同步的流水不补历史数据。</li>
+      <li>本次不做：KYC验证时间、拉取时间的筛选和排序。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+const CP = '<svg class="cp" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>';
+const STATE = {5:['系统处理中','info'],1:['待处理','warning'],2:['处理中','info'],3:['已驳回','error'],4:['已处理','success']};
+const DEP = ['存款未到账','USDT存款未到账'], NR = ['存款未到账','USDT存款未到账','取款未到账','USDT取款未到账'];
+// link: -1 不适用 0 未连接 1 已连接；otp 为空表示没有 KYC验证时间
+const WO = [
+  {id:'2610211334239933894',type:'存款未到账',vip:'VIP 2',uid:'19003611',acct:'919****841',state:5,third:'Umoney-QR',utr:1,code:'UmoneyPayIN',ch:'10656',link:1,rcv:'6204392641',sub:'2026-10-21 13:34:23',otp:'2026-10-21 13:33:51',upd:'2026-10-21 13:38:02',note:'提交时完成验证并连上'},
+  {id:'2610211014221039140',type:'存款未到账',vip:'VIP 2',uid:'19598530',acct:'919****375',state:2,third:'WPay-QR',utr:1,code:'WPayINR',ch:'10453',link:1,rcv:'6207350163',sub:'2026-10-21 10:14:22',otp:'2026-10-21 12:05:17',upd:'2026-10-21 11:02:36',note:'10:13 提交时验证但没连上，12:05 补做后连上，时间更新为最近一次'},
+  {id:'2610210928405517730',type:'存款未到账',vip:'VIP 1',uid:'27719046',acct:'917****402',state:3,third:'Super-QR',utr:0,code:'SuperPay2INR',ch:'10311',link:0,rcv:'',sub:'2026-10-21 09:28:40',otp:'',upd:'2026-10-21 09:45:10',note:'提交时跳过验证（还没授权），系统驳回'},
+  {id:'2610211333556384593',type:'取款未到账',vip:'VIP 1',uid:'8298785',acct:'917****520',state:1,third:'WPay',utr:-1,code:'WPayINR',ch:'10167',link:1,rcv:'',sub:'2026-10-21 13:33:55',otp:'2026-10-21 13:33:20',upd:'2026-10-21 13:33:55',note:'取款工单'},
+  {id:'2610211332118850147',type:'USDT存款未到账',vip:'VIP 1',uid:'6589694',acct:'918****211',state:4,third:'Paile-QR',utr:-1,code:'PailePay',ch:'10262',link:-1,rcv:'',sub:'2026-10-21 13:32:11',otp:'',upd:'2026-10-21 13:40:09',note:'USDT 不走 KYC'},
+  {id:'2610201809455514022',type:'存款未到账',vip:'VIP 0',uid:'24884341',acct:'919****781',state:4,third:'PAYTM-Super',utr:1,code:'SuperPay2INR',ch:'10317',link:1,rcv:'6207350171',sub:'2026-10-20 18:09:45',otp:'',upd:'2026-10-20 19:12:30',note:'上线前提交的旧工单：只显示连接状态'},
+  {id:'2610211333558402696',type:'删除银行卡',vip:'VIP 3',uid:'2122263',acct:'917****094',state:4,third:'',utr:-1,code:'',ch:'0',link:-1,rcv:'',sub:'2026-10-21 13:33:55',otp:'',upd:'2026-10-21 13:35:10',note:'不适用的工单类型'},
+];
+// 流水：wo 为关联工单，abn 为异常流水
+const FLOW = [
+  {wo:'2610211334239933894',uid:'19003611',phone:'96****4919',bank:'Phonepe',payer:'9629324919@ibl',amt:'500',utr:'195628049747',rcv:'6204392641',ifsc:'',name:'HARPREET SINGH',mode:2,abn:0,tt:'2026-10-21 13:30:12',pt:'2026-10-21 13:38:02'},
+  {wo:'2610211334239933894',uid:'19003611',phone:'96****4919',bank:'Phonepe',payer:'',amt:'200',utr:'490675387630',rcv:'9629****@ibl',ifsc:'',name:'',mode:1,abn:0,tt:'2026-10-21 11:25:40',pt:'2026-10-21 13:38:02'},
+  {wo:'2610211014221039140',uid:'19598530',phone:'98****1203',bank:'Paytm',payer:'9812201203@ptyes',amt:'1000',utr:'542394460946',rcv:'6207350163',ifsc:'',name:'RAHUL KUMAR',mode:2,abn:0,tt:'2026-10-21 10:02:55',pt:'2026-10-21 12:09:44'},
+  {wo:'2610211333556384593',uid:'8298785',phone:'97****8520',bank:'GPay',payer:'',amt:'3000',utr:'262808339618',rcv:'9241****945@okaxis',ifsc:'UTIB0001234',name:'',mode:1,abn:0,tt:'2026-10-21 13:20:05',pt:'2026-10-21 13:35:41'},
+  {wo:'2610211014221039140',uid:'19598530',phone:'98****1203',bank:'Paytm',payer:'9812201203@ptyes',amt:'100',utr:'222278000898',rcv:'8520971700-3@axl',ifsc:'',name:'BANK ACCOUNT X',mode:2,abn:1,tt:'2026-10-21 09:56:31',pt:'2026-10-21 12:09:44'},
+  {wo:'2610201809455514022',uid:'24884341',phone:'91****7781',bank:'Phonepe',payer:'9100007781@ybl',amt:'800',utr:'731049552018',rcv:'6207350171',ifsc:'',name:'AMIT SHARMA',mode:2,abn:0,tt:'2026-10-20 18:01:20',pt:'',note:'上线前已同步的流水'},
+];
+let page = 'all', sub = 'normal', flowWo = '';
+const showKyc = () => true;
+const tag = (t, c, extra = '') => `<span class="tag ${c}" ${extra}>${t}</span>`;
+const hasOtp = w => NR.includes(w.type) && w.otp;
+function kycCell(w, inDetail){
+  if (!NR.includes(w.type) || w.link === -1) return '--';
+  const t = w.link ? tag('已连接 ↗','success',`data-jump="${w.id}"`) : tag('未连接 ↗','error',`data-jump="${w.id}"`);
+  const v = hasOtp(w) ? `<span class="vtime new-box">${w.otp}</span>` : '';
+  return inDetail ? `${t}${v}` : `<div class="kyc-cell">${t}${v}</div>`;
+}
+function render(){
+  const st = $('#f-state').value, ty = $('#f-type').value, k = showKyc();
+  document.querySelectorAll('.kyc-only').forEach(e => e.style.display = k ? '' : 'none');
+  const rows = WO.filter(w => (page === 'all' ? (!st || w.state == st) : w.state === 1) && (!ty || w.type === ty));
+  const kh = k ? `<th>是否匹配 UTR</th>` : '';
+  const kh2 = k ? `<th class="new-col">KYC连接 / 验证时间<span class="new">NEW</span></th><th>收款账号</th>` : '';
+  let h = `<thead><tr><th style="width:40px"><input type="checkbox"></th><th>工单号</th><th>工单类型</th><th>vip等级</th><th>会员id</th><th>状态</th><th>三方名称</th>${kh}<th>三方映射码</th><th>三方通道ID</th>${kh2}<th>提交时间</th><th>操作时间</th><th class="sticky-r">操作</th></tr></thead><tbody>`;
+  if (!rows.length) h += `<tr class="empty-row"><td colspan="${k ? 15 : 12}">暂无数据</td></tr>`;
+  rows.forEach(w => {
+    const kd = k ? `<td class="c">${w.utr === -1 ? '--' : w.utr ? tag('是 ↗','success') : tag('否','error')}</td>` : '';
+    const kd2 = k ? `<td class="new-col c">${kycCell(w)}</td><td>${DEP.includes(w.type) && w.rcv ? w.rcv : '--'}</td>` : '';
+    h += `<tr>
+      <td class="c"><input type="checkbox" ${w.state === 1 || w.state === 2 ? '' : 'disabled'}></td>
+      <td><div class="idline"><span class="mono">${w.id}</span>${CP}</div></td>
+      <td>${w.type}</td><td>${w.vip}</td>
+      <td><div>会员id: <span class="link">${w.uid}</span></div><span class="acct">账户: ${w.acct}</span></td>
+      <td>${tag(...STATE[w.state])}</td>
+      <td>${w.third || '--'}</td>${kd}
+      <td>${w.code ? tag(w.code,'error') : ''}</td>
+      <td>${w.ch}</td>${kd2}
+      <td class="mono">${w.sub}</td><td class="mono">${w.upd}</td>
+      <td class="sticky-r"><span class="link" data-detail="${w.id}">详情</span></td>
+    </tr>`;
+  });
+  $('#tbl').innerHTML = h + '</tbody>';
+  $('#total').textContent = `共 ${rows.length} 条`;
+}
+function renderFlow(){
+  const rows = FLOW.filter(f => (sub === 'abn' ? f.abn : !f.abn) && (!flowWo || f.wo === flowWo));
+  $('#ftip').innerHTML = flowWo ? `从工单 <b>${flowWo}</b> 的「KYC连接」跳转过来，已按工单号筛选` : '';
+  let h = `<thead><tr><th>会员ID</th><th>手机号</th><th>银行名称</th><th>付款账号</th><th>流水金额</th><th>UTR</th><th>收款账号</th><th>IFSC</th><th>收款人姓名</th><th>交易类型</th><th>流水状态</th><th>交易时间</th><th class="new-col">拉取时间<span class="new">NEW</span></th></tr></thead><tbody>`;
+  if (!rows.length) h += '<tr class="empty-row"><td colspan="13">暂无数据</td></tr>';
+  rows.forEach(f => {
+    h += `<tr>
+      <td>${f.uid}</td><td class="mono">${f.phone}</td><td>${f.bank}</td><td>${f.payer || '--'}</td><td class="num">${f.amt}</td>
+      <td class="mono">${f.utr}</td><td>${f.rcv}</td><td>${f.ifsc || '--'}</td><td>${f.name || '--'}</td>
+      <td class="c">${f.mode === 2 ? tag('支出','error') : tag('收入','success')}</td>
+      <td class="c">${f.abn ? tag('异常','error') : tag('正常','success')}</td>
+      <td class="mono">${f.tt}</td>
+      <td class="new-col mono">${f.pt || '--'}</td>
+    </tr>`;
+  });
+  $('#ftbl').innerHTML = h + '</tbody>';
+  $('#ftotal').textContent = `共 ${rows.length} 条`;
+}
+function openDetail(id){
+  const w = WO.find(x => x.id === id), k = showKyc();
+  const it = (lb, vl, isNew) => `<div class="it${isNew ? ' is-new' : ''}"><div class="lb">${lb}${isNew ? '<span class="new">NEW</span>' : ''}</div><div class="vl">${vl}</div></div>`;
+  let h = it('工单号', `<span class="mono">${w.id}</span>`) + it('工单类型', tag(w.type,'info'))
+    + it('提交时间', w.sub) + it('状态', tag(...STATE[w.state]))
+    + it('操作时间', w.upd) + it('操作人', '--')
+    + it('会员id', `<span class="link">${w.uid} ↗</span>`);
+  if (NR.includes(w.type)) h += it('转发状态', '--');
+  h += it('IP', '103.211.**.**');
+  if (k && DEP.includes(w.type)) h += it('收款账号', w.rcv ? `<span class="link">${w.rcv} ↗</span>` : '--');
+  if (k && NR.includes(w.type)) h += it('KYC连接 / 验证时间', kycCell(w, true), true);
+  if ((h.match(/class="it/g) || []).length % 2) h += '<div class="it"><div class="lb"></div><div class="vl"></div></div>';
+  $('#desc').innerHTML = h;
+  $('#dmodal').classList.add('show');
+}
+function goPage(p){
+  document.querySelectorAll('.ptab').forEach(x => x.classList.toggle('on', x.dataset.page === p));
+  page = p;
+  $('#v-wo').classList.toggle('on', p !== 'flow');
+  $('#v-flow').classList.toggle('on', p === 'flow');
+  if (p === 'flow') { $('#ff-wo').value = flowWo; renderFlow(); return; }
+  $('#title').textContent = p === 'all' ? '工单管理' : '待处理工单';
+  $('#f-state-w').style.display = p === 'all' ? '' : 'none';
+  render();
+}
+function jump(id){ closeM(); flowWo = id; sub = WO.find(w => w.id === id) && FLOW.some(f => f.wo === id && !f.abn) ? 'normal' : 'abn'; document.querySelectorAll('.subtab').forEach(x => x.classList.toggle('on', x.dataset.sub === sub)); goPage('flow'); }
+const closeM = () => $('#dmodal').classList.remove('show');
+$('#mclose').onclick = closeM; $('#mcancel').onclick = closeM;
+$('#dmodal').addEventListener('click', e => {
+  if (e.target.id === 'dmodal') return closeM();
+  const j = e.target.closest('[data-jump]'); if (j) jump(j.dataset.jump);
+});
+$('#tbl').addEventListener('click', e => {
+  const d = e.target.closest('[data-detail]'); if (d) return openDetail(d.dataset.detail);
+  const j = e.target.closest('[data-jump]'); if (j) return jump(j.dataset.jump);
+  if (e.target.closest('.cp')) toast('复制成功', 'success');
+});
+document.querySelectorAll('.ptab[data-page]').forEach(t => t.onclick = () => { if (t.dataset.page === 'flow') flowWo = ''; goPage(t.dataset.page); });
+document.querySelectorAll('.subtab').forEach(t => t.onclick = () => { document.querySelectorAll('.subtab').forEach(x => x.classList.remove('on')); t.classList.add('on'); sub = t.dataset.sub; renderFlow(); });
+$('#fq').onclick = () => { flowWo = $('#ff-wo').value.trim(); renderFlow(); };
+$('#fr').onclick = () => { flowWo = ''; $('#ff-wo').value = ''; renderFlow(); };
+$('#q').onclick = render;
+$('#r').onclick = () => { $('#f-state').value = ''; $('#f-type').value = ''; render(); };
+render();
+
+let tt;
+function toast(msg, type){
+  const c = type === 'success' ? 'var(--success)' : 'var(--warning)';
+  $('#toast-dot').style.background = c; $('#toast-dot').textContent = type === 'success' ? '✓' : '!';
+  $('#toast-text').textContent = msg; $('#toast').classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 2000);
+}
+const openD = () => document.body.classList.add('dopen');
+const closeD = () => document.body.classList.remove('dopen');
+$('#handle').onclick = openD; $('#dmask').onclick = closeD; $('#dclose').onclick = closeD;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeD(); closeM(); } });
+</script>
+</body>
+</html>
