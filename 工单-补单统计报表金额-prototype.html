@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>补单统计报表金额</title>
+<style>
+:root{
+  --primary:#2080f0; --primary-hover:#4098fc; --primary-soft:rgba(32,128,240,.1); --primary-line:rgba(32,128,240,.3);
+  --success:#18a058; --success-soft:rgba(24,160,88,.1); --success-line:rgba(24,160,88,.3);
+  --warning:#f0a020; --warning-soft:rgba(240,160,32,.12); --warning-line:rgba(240,160,32,.35);
+  --error:#d03050; --error-soft:rgba(208,48,80,.08); --error-line:rgba(208,48,80,.3);
+  --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb; --line-2:#efeff5;
+  --bg:#f3f4f6; --card:#fff; --th:#fafafc; --new:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-width:1280px}
+button{font-family:inherit}
+/* ===== 顶部导航 ===== */
+.topbar{height:60px;background:#fff;display:flex;align-items:center;padding:0 40px;box-shadow:0 1px 4px rgba(0,21,41,.06);position:relative;z-index:5}
+.logo{width:30px;height:30px;border-radius:8px;background:#f06a5b;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.brand{margin-left:10px;font-weight:600}
+.clock{margin-left:28px;color:var(--text-2)}
+.nav{display:flex;gap:40px;margin-left:80px}
+.nav span{color:var(--text-2);cursor:default}
+.nav span.on{color:var(--primary)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:18px;color:var(--text-2);font-size:13px}
+.top-right b{color:var(--error);font-weight:400}
+.switch{width:40px;height:22px;border-radius:11px;background:#dbdbdf;position:relative;display:inline-block;vertical-align:middle;margin-right:6px}
+.switch:after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff}
+.avatar{width:30px;height:30px;border-radius:50%;background:#f06a5b}
+/* ===== 多页签 ===== */
+.tabsbar{display:flex;gap:6px;padding:8px 40px 0;background:var(--bg)}
+.ptab{height:32px;padding:0 12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;cursor:pointer;color:var(--text-2);font-size:13px}
+.ptab.on{background:var(--primary);color:#fff}
+.ptab i{font-style:normal;font-size:11px;opacity:.7}
+/* ===== 页面 ===== */
+.page{padding:10px 40px 40px}
+.card{background:var(--card);border-radius:4px;padding:18px 24px}
+.card+.card{margin-top:10px}
+.card-title{font-size:18px;font-weight:600;margin-bottom:16px}
+.form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));column-gap:18px;row-gap:14px}
+.fi{display:flex;align-items:center;gap:10px;min-width:0}
+.fi label{flex:0 0 86px;text-align:right;color:var(--text);font-size:13px;line-height:1.3}
+.fi .ctl{flex:1;min-width:0}
+.fi.span2{grid-column:span 2}
+.inp,.sel{width:100%;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
+.inp::placeholder{color:#c2c2c2}
+.sel{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3l4 4 4-4' fill='none' stroke='%23b0b0b0' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:26px;cursor:pointer}
+.sel.empty{color:#c2c2c2}
+.inp:focus,.sel:focus{border-color:var(--primary)}
+.range{display:flex;align-items:center;gap:6px}
+.range .inp{flex:1}
+.date{display:flex;align-items:center;height:34px;border:1px solid var(--line);border-radius:3px;padding:0 10px;font-size:13px;color:var(--text);gap:10px;white-space:nowrap;overflow:hidden}
+.date span{flex:1;text-align:center}
+.date .ph{color:#c2c2c2}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.btn{height:34px;padding:0 16px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-hover)}
+.btn.disabled{background:#a6cbf6;border-color:#a6cbf6;color:#fff;cursor:not-allowed}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+/* NEW 徽章 */
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;letter-spacing:.3px}
+.fi.is-new .sel,.fi.is-new .inp{border-color:rgba(229,72,77,.55);box-shadow:0 0 0 2px rgba(229,72,77,.08)}
+/* ===== 表格 ===== */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line-2);border-radius:3px}
+table.tbl{border-collapse:collapse;width:max-content;min-width:100%}
+.tbl th{background:var(--th);font-weight:500;text-align:center;padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);white-space:nowrap;font-size:13px}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);text-align:left;vertical-align:middle;font-size:13px;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.c{text-align:center}
+.tbl th.new-col{background:#fff4f4}
+.tbl td.new-col{background:#fffafa}
+.ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sticky-r{position:sticky;right:0;background:#fff;box-shadow:-4px 0 6px -4px rgba(0,0,0,.12)}
+th.sticky-r{background:var(--th)}
+.muted{color:var(--text-3)}
+.link{color:var(--primary);cursor:pointer}
+.mono{font-variant-numeric:tabular-nums}
+.acct{display:inline-block;margin-top:4px;padding:0 6px;border:1px solid var(--warning-line);background:var(--warning-soft);color:#c77c02;border-radius:3px;font-size:12px}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;font-size:12px;border:1px solid var(--line);background:#fafafc;color:var(--text-2);white-space:nowrap}
+.tag.info{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-line)}
+.tag.success{color:var(--success);background:var(--success-soft);border-color:var(--success-line)}
+.tag.warning{color:#d68a0c;background:var(--warning-soft);border-color:var(--warning-line)}
+.tag.error{color:var(--error);background:var(--error-soft);border-color:var(--error-line)}
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--text-2)}
+.pager .pg{width:28px;height:28px;border:1px solid var(--line);border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--text-3)}
+.pager .pg.on{border-color:var(--primary);color:var(--primary)}
+.empty-row td{text-align:center!important;color:var(--text-3);padding:30px}
+/* 子页签（KYC） */
+.subtabs{display:flex;gap:8px}
+.subtab{height:36px;padding:0 16px;display:flex;align-items:center;border-radius:4px;cursor:pointer;color:var(--text);font-size:14px}
+.subtab.on{background:var(--primary);color:#fff;font-weight:500}
+/* ===== 模拟控制条 ===== */
+.sim{border:1.5px dashed #e0b400;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:#7a5b00}
+.sim strong{color:#ad7f00}
+.sim .inp,.sim .sel{height:28px;width:auto}
+/* ===== 弹窗（模拟产品功能） ===== */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:6px;width:min(1100px,92vw);max-height:84vh;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.modal-h{padding:16px 22px;font-weight:600;font-size:16px;display:flex;align-items:center}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:18px;font-weight:400}
+.modal-b{padding:0 22px 8px;overflow:auto}
+.modal-f{padding:12px 22px 18px;display:flex;justify-content:flex-end;gap:10px}
+.demo-note{font-size:12px;color:#7a5b00;background:#fffbe6;border:1px dashed #e0b400;padding:6px 10px;border-radius:3px;margin-bottom:10px}
+/* 消息提示 */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);border-radius:4px;padding:10px 16px;font-size:13px;display:none;align-items:center;gap:8px;z-index:90}
+.toast.show{display:flex}
+.toast .dot{width:16px;height:16px;border-radius:50%;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+/* ===== 需求说明抽屉 ===== */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--primary);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--primary)}
+.drawer-b h3:first-child{margin-top:0}
+.drawer-b ol,.drawer-b ul{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+
+.form.f3{grid-template-columns:repeat(3,minmax(0,1fr)) auto}
+.form.f3 .fi label{flex-basis:60px}
+.tbl td.num{text-align:right}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">AR</div><span class="brand">AR</span>
+  <span class="clock">2026-10-14 11:39</span>
+  <nav class="nav"><span>PWA管理</span><span class="on">工单管理</span><span>KYC模块</span><span>内容管理</span><span>系统设置</span></nav>
+  <div class="top-right"><span><i class="switch"></i>自动刷新</span><span>系统处理中: <b>1427</b></span><span>待处理: <b>157</b></span><i class="avatar"></i><span>luna002</span></div>
+</header>
+
+<div class="tabsbar">
+  <div class="ptab">Welcome <i>✕</i></div>
+  <div class="ptab">工单列表 <i>✕</i></div>
+  <div class="ptab">补单记录 <i>✕</i></div>
+  <div class="ptab on">补单统计报表 <i>✕</i></div>
+</div>
+
+<main class="page">
+  <section class="card">
+    <div class="card-title">补单统计报表</div>
+    <div class="form f3">
+      <div class="fi"><label>商户</label><div class="ctl"><select class="sel" id="f-tenant"><option value="">全部</option><option value="ar048-91club" selected>ar048-91club</option><option value="ar050-Daman">ar050-Daman</option></select></div></div>
+      <div class="fi"><label>三方名称</label><div class="ctl"><input class="inp" id="f-third" placeholder="三方名称"></div></div>
+      <div class="fi"><label>日期范围</label><div class="ctl"><div class="date"><span>2026-10-14 00:00:00</span><span class="muted">→</span><span>2026-10-14 23:59:59</span></div></div></div>
+      <div class="fi"><button class="btn primary" id="q">查询</button><button class="btn" id="r">重置</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tbl-wrap"><table class="tbl" id="tbl"></table></div>
+    <div class="pager"><span id="total"></span><span class="pg">‹</span><span class="pg on">1</span><span class="pg">›</span><span class="tag" style="height:28px">10 / 页</span></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"><span class="dot" id="toast-dot">!</span><span id="toast-text"></span></div>
+
+<!-- 需求说明抽屉 -->
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">原型中带 <span class="new">NEW</span> 的为本次新增。</p>
+
+    <h3>改造点</h3>
+    <table>
+      <tr><th style="width:190px">页面</th><th>改动</th></tr>
+      <tr><td>工单管理 → 补单统计报表</td><td>新增「存款未到账工单金额」「补单成功金额」两列</td></tr>
+    </table>
+
+    <h3>业务规则</h3>
+    <ol>
+      <li>「存款未到账工单金额」：同一行「存款未到账工单数量」所统计工单的订单金额合计。</li>
+      <li>「补单成功金额」：上述工单中补单后已到账的工单的订单金额合计，每张工单只计一次。</li>
+      <li>订单金额取系统向彩票查询到的充值订单金额；未查询到时取会员提交工单时填写的金额。</li>
+      <li>金额保留两位小数。</li>
+      <li>两列标题支持工单后台现有语言：
+        <table>
+          <tr><th>中文</th><th>英文</th><th>缅甸语</th></tr>
+          <tr><td>存款未到账工单金额</td><td>Uncredited Deposit Orders Amount</td><td>ငွေပေးချေမှုမရရှိသော ဝန်ဆောင်မှု ပမာဏ</td></tr>
+          <tr><td>补单成功金额</td><td>Successful Replenishments Amount</td><td>အဖြည့်အော်ဒါ အောင်မြင်သော ပမာဏ</td></tr>
+        </table>
+      </li>
+    </ol>
+
+    <h3>限制条件</h3>
+    <ol>
+      <li>本次不做：导出、合计行。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+/* 演示数据：工单数量等沿用运营截图，金额为演示值 */
+const DATA = [
+  ['RsPay-QR','10265','ar048-91club',118,'59000.00',427,391,57,334,'19.49 %','22.03 %','0.00 %','14.58 %','48.31 %','27500.00'],
+  ['PAYTM','10317','ar048-91club',817,'612300.00',4525,4180,28,4152,'1.47 %','1.35 %','0.12 %','0.67 %','3.43 %','18200.00'],
+  ['MagicPay','10540','ar048-91club',306,'183600.00',1521,1405,24,1381,'6.86 %','4.90 %','0.00 %','1.71 %','7.84 %','14100.00'],
+  ['IC2Pay','12141','ar048-91club',14,'7000.00',6,0,0,0,'42.86 %','0.00 %','0.00 %','0.00 %','0.00 %','0.00'],
+  ['QR','10725','ar048-91club',900,'468500.00',1496,1311,214,1097,'23.33 %','11.44 %','0.44 %','16.32 %','23.78 %','109850.00'],
+  ['PAYTM-OX2Pay','12217','ar048-91club',233,'139800.00',301,233,3,230,'70.82 %','29.18 %','0.00 %','1.29 %','1.29 %','1500.00'],
+  ['Super','10311','ar048-91club',2250,'1350250.00',12342,11288,101,11187,'2.89 %','1.64 %','0.04 %','0.89 %','4.49 %','60600.00'],
+  ['MovPay','12017','ar048-91club',32,'16000.00',139,125,125,0,'15.62 %','12.50 %','0.00 %','100.00 %','100.00 %','16000.00'],
+  ['NewNinePay-UPI','12246','ar050-Daman',96,'52480.50',210,188,30,158,'18.75 %','9.38 %','3.13 %','15.96 %','31.25 %','16405.50'],
+];
+const COLS = [
+  ['三方名称','l'],['三方通道ID','l'],['商户名称','l'],['存款未到账工单数量','l'],
+  ['存款未到账工单金额','l','new'],
+  ['提交查询数量','l'],['查询成功数量','l'],['补单成功数','l'],
+  ['补单成功金额','l','new'],
+  ['补单失败数','l'],['首补成功率','l'],['二补成功率','l'],['三补成功率','l'],['总提交成功率','l'],['实际成功率','l'],
+];
+/* 数据列顺序 -> 展示列顺序 */
+const ORDER = [0,1,2,3,4,5,6,7,14,8,9,10,11,12,13];
+function fmt(v){ return typeof v === 'string' && /^\d+\.\d{2}$/.test(v) ? Number(v).toLocaleString('en-US',{minimumFractionDigits:2}) : v; }
+function render(){
+  const tenant = $('#f-tenant').value, third = $('#f-third').value.trim().toLowerCase();
+  const rows = DATA.filter(d => (!tenant || d[2] === tenant) && (!third || d[0].toLowerCase().includes(third)));
+  let h = '<thead><tr>' + COLS.map(c => `<th class="${c[2] ? 'new-col' : ''}">${c[0]}${c[2] ? '<span class="new">NEW</span>' : ''}</th>`).join('') + '</tr></thead><tbody>';
+  if (!rows.length) h += `<tr class="empty-row"><td colspan="${COLS.length}">暂无数据</td></tr>`;
+  rows.forEach(d => {
+    h += '<tr>' + ORDER.map((i, k) => `<td class="${COLS[k][1] === 'r' ? 'num' : ''} ${COLS[k][2] ? 'new-col' : ''}">${fmt(d[i])}</td>`).join('') + '</tr>';
+  });
+  $('#tbl').innerHTML = h + '</tbody>';
+  $('#total').textContent = `共 ${rows.length} 条`;
+}
+$('#q').onclick = render;
+$('#r').onclick = () => { $('#f-tenant').value = 'ar048-91club'; $('#f-third').value = ''; render(); };
+render();
+
+let tt;
+function toast(msg, type){
+  const c = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--warning)';
+  $('#toast-dot').style.background = c; $('#toast-dot').textContent = type === 'success' ? '✓' : '!';
+  $('#toast-text').textContent = msg; $('#toast').classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 2000);
+}
+const openD = () => document.body.classList.add('dopen');
+const closeD = () => document.body.classList.remove('dopen');
+$('#handle').onclick = openD; $('#dmask').onclick = closeD; $('#dclose').onclick = closeD;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeD(); });
+</script>
+</body>
+</html>
