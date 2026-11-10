@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEP20跳转USDT存款未到账</title>
+<style>
+:root{
+  --primary:#18b660; --primary-2:#3cd699; --blue:#2080f0;
+  --warning:#f0a020; --error:#d03050; --success:#18a058;
+  --text:#1f2225; --text-2:#606266; --text-3:#a0a3a8; --line:#e5e6eb;
+  --bg:#eef0f3; --phone-bg:#f5f6f8; --card:#fff; --th:#fafafc; --new:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
+button{font-family:inherit}
+.page{padding:32px 56px 48px;display:flex;justify-content:center}
+/* ===== 手机外框 ===== */
+.phone{width:390px;height:min(780px,calc(100vh - 64px));min-height:520px;background:var(--phone-bg);border-radius:36px;border:10px solid #1f2225;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.navbar{height:48px;flex:0 0 48px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;font-size:16px;font-weight:600;border-bottom:1px solid var(--line)}
+.navbar .back{position:absolute;left:12px;top:0;height:48px;width:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);font-size:22px;font-weight:400}
+.navbar .back.hide{visibility:hidden}
+.screen{flex:1;overflow:auto;padding:14px}
+.screen.hide{display:none}
+/* ===== 充值记录卡片 ===== */
+.item{background:var(--card);border-radius:10px;padding:12px 14px 14px;margin-bottom:12px}
+.item-h{display:flex;align-items:center;justify-content:space-between}
+.item-h .tit{font-weight:600;font-size:15px}
+.st{font-size:13px}
+.st.wait{color:var(--warning)}
+.divider{height:1px;background:var(--line);margin:10px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;line-height:26px}
+.row span:first-child{color:var(--text-2);flex:0 0 auto}
+.row span:last-child{text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .price{color:var(--error);font-weight:600}
+.btn{display:block;width:100%;height:34px;border:none;border-radius:17px;color:#fff;font-size:14px;cursor:pointer;margin-top:10px;background:linear-gradient(270deg,var(--primary-2) 0%,var(--primary) 100%)}
+.btn:active{opacity:.85}
+/* ===== NEW 徽章 ===== */
+.new{display:inline-block;background:var(--new);color:#fff;font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;margin-left:6px;vertical-align:middle;font-weight:600;font-style:normal}
+.new-wrap{outline:2px dashed var(--new);outline-offset:3px;border-radius:12px}
+/* ===== 工单表单页 ===== */
+.form-card{background:#fff;border-radius:10px;padding:4px 14px}
+.fld{padding:12px 0;border-bottom:1px solid var(--line)}
+.fld:last-child{border-bottom:none}
+.fld label{display:block;font-size:13px;color:var(--text-2);margin-bottom:6px}
+.fld label b{color:var(--error);font-weight:400;margin-right:2px}
+.fld .val{font-size:14px;word-break:break-all}
+.fld .ph{color:var(--text-3);font-size:14px}
+.upload{width:72px;height:72px;border:1px dashed #c9cdd4;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:28px;background:#fafafa}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;margin-bottom:12px}
+.tag.usdt{background:rgba(24,182,96,.12);color:var(--primary)}
+.tag.normal{background:rgba(32,128,240,.1);color:var(--blue)}
+/* ===== toast ===== */
+.toast{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap}
+.toast.show{opacity:1}
+/* ===== 需求说明抽屉 ===== */
+.handle{position:fixed;right:0;top:50%;transform:translateY(-50%);width:30px;padding:14px 0;background:var(--blue);color:#fff;border-radius:6px 0 0 6px;writing-mode:vertical-rl;white-space:nowrap;letter-spacing:4px;font-size:13px;cursor:pointer;z-index:40;box-shadow:-2px 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center}
+.dmask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s}
+body.dopen .dmask{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:680px;max-width:92vw;background:#fff;z-index:61;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-6px 0 20px rgba(0,0,0,.12)}
+body.dopen .drawer{transform:none}
+.drawer-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:16px;font-weight:600}
+.drawer-h .x{margin-left:auto;cursor:pointer;color:var(--text-3);font-size:20px;font-weight:400}
+.drawer-b{padding:20px 24px 40px;overflow:auto;line-height:1.75;font-size:14px}
+.drawer-b h3{font-size:15px;margin:22px 0 8px;padding-left:8px;border-left:3px solid var(--blue)}
+.drawer-b h3:first-child{margin-top:0}
+.drawer-b ol{padding-left:20px}
+.drawer-b li{margin:4px 0}
+.drawer-b table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+.drawer-b th,.drawer-b td{border:1px solid var(--line);padding:6px 10px;vertical-align:top;text-align:left}
+.drawer-b th{background:var(--th);text-align:center;font-weight:500}
+.drawer-b .src{color:var(--text-2);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phone">
+    <div class="navbar"><span class="back hide" id="back">‹</span><span id="nav-title">充值记录</span></div>
+
+    <!-- 充值记录（选择订单） -->
+    <div class="screen" id="list"></div>
+
+    <!-- 工单表单 -->
+    <div class="screen hide" id="form">
+      <span class="tag" id="f-tag"></span>
+      <div class="form-card">
+        <div class="fld"><label><b>*</b>订单号</label><div class="val" id="f-order"></div></div>
+        <div class="fld"><label><b>*</b>金额</label><div class="val" id="f-amount"></div></div>
+        <div class="fld"><label><b>*</b>上传凭证</label><div class="upload">+</div></div>
+      </div>
+      <button class="btn" id="f-submit">提交</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<!-- 需求说明抽屉 -->
+<div class="handle" id="handle">需求说明</div>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" aria-label="需求说明">
+  <div class="drawer-h">需求说明<span class="x" id="dclose">✕</span></div>
+  <div class="drawer-b">
+    <p class="src">原型中带 <span class="new">NEW</span> 的为本次改动。</p>
+
+    <h3>改造点</h3>
+    <table>
+      <tr><th style="width:210px">页面</th><th>改动</th></tr>
+      <tr><td>会员端工单（全部站点）：存款未到账 → 选择充值订单</td><td>认定为 USDT 充值订单的支付大类，由 11、19 扩大为 11、19、110～119</td></tr>
+    </table>
+
+    <h3>业务规则</h3>
+    <ol>
+      <li>会员选择充值订单提交工单时，订单的支付大类为 11、19、110～119 之一的，进入「USDT存款未到账」；其余进入「存款未到账」。</li>
+    </ol>
+
+    <h3>限制条件</h3>
+    <ol>
+      <li>本次不做：取款订单的 USDT 认定范围（另行确认）、KYC 短信认证的渠道判断、带订单号直接进入工单的跳转、已提交工单的工单类型调整。</li>
+    </ol>
+  </div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+// payId 仅用于原型内判断跳转，不在页面显示
+const USDT_PAY_IDS = [11, 19, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119];
+const ORDERS = [
+  {name:'USDT-BEP20', payId:110, amount:'1000.00', time:'2026-11-10 08:02:15', order:'RC2026111008021534918207', isNew:true},
+  {name:'USDT-TRC20', payId:11,  amount:'500.00',  time:'2026-11-10 07:41:09', order:'RC2026111007410982310465'},
+  {name:'UPI-QR',     payId:26,  amount:'300.00',  time:'2026-11-09 22:15:37', order:'RC2026110922153771045182'},
+  {name:'ARPay',      payId:21,  amount:'200.00',  time:'2026-11-09 20:03:48', order:'RC2026110920034816620937'}
+];
+
+function renderList(){
+  $('#list').innerHTML = ORDERS.map((o, i) => `
+    <div class="item${o.isNew ? ' new-wrap' : ''}">
+      <div class="item-h"><span class="tit">充值</span><span class="st wait">处理中</span></div>
+      <div class="divider"></div>
+      <div class="row"><span>金额</span><span class="price">${o.amount}</span></div>
+      <div class="row"><span>类型</span><span>${o.name}${o.isNew ? '<i class="new">NEW</i>' : ''}</span></div>
+      <div class="row"><span>时间</span><span>${o.time}</span></div>
+      <div class="row"><span>订单号</span><span>${o.order}</span></div>
+      <button class="btn" data-i="${i}">提交存款凭证</button>
+    </div>`).join('');
+  document.querySelectorAll('#list .btn').forEach(b => b.onclick = () => openForm(ORDERS[+b.dataset.i]));
+}
+
+function openForm(o){
+  const usdt = USDT_PAY_IDS.includes(o.payId);
+  const title = usdt ? 'USDT存款未到账' : '存款未到账';
+  $('#nav-title').textContent = title;
+  $('#f-tag').textContent = title;
+  $('#f-tag').className = 'tag ' + (usdt ? 'usdt' : 'normal');
+  $('#f-order').textContent = o.order;
+  $('#f-amount').textContent = o.amount;
+  $('#list').classList.add('hide');
+  $('#form').classList.remove('hide');
+  $('#back').classList.remove('hide');
+}
+function backToList(){
+  $('#nav-title').textContent = '充值记录';
+  $('#form').classList.add('hide');
+  $('#list').classList.remove('hide');
+  $('#back').classList.add('hide');
+}
+let tt;
+function toast(msg){
+  $('#toast').textContent = msg; $('#toast').classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 1600);
+}
+$('#back').onclick = backToList;
+$('#f-submit').onclick = () => toast('提交成功');
+renderList();
+
+const openD = () => document.body.classList.add('dopen');
+const closeD = () => document.body.classList.remove('dopen');
+$('#handle').onclick = openD; $('#dmask').onclick = closeD; $('#dclose').onclick = closeD;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeD(); });
+</script>
+</body>
+</html>
