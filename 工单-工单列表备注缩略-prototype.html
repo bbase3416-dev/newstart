@@ -200,7 +200,7 @@ body.dopen .drawer{transform:none}
     <h3>改造点</h3>
     <table>
       <tr><th style="width:150px">端</th><th style="width:200px">页面</th><th>改动</th></tr>
-      <tr><td>工单后台（商户、总控）</td><td>工单管理 → 工单列表、待处理工单</td><td>「备注」列最多显示 2 行，超出部分省略，鼠标悬停看完整备注</td></tr>
+      <tr><td>工单后台（商户、总控）</td><td>工单管理 → 工单列表</td><td>「备注」列最多显示 2 行，超出部分省略，鼠标悬停看完整备注</td></tr>
     </table>
     <h3>业务规则</h3>
     <ol>
@@ -210,6 +210,7 @@ body.dopen .drawer{transform:none}
     <h3>限制条件</h3>
     <ol>
       <li>本次不做：其他页面（含工单配置）备注列的显示调整。</li>
+      <li>待处理工单与工单列表共用同一个列表，同步生效；待处理工单一般没有备注（显示「--」），请用工单列表中已处理、已驳回的工单验证。</li>
     </ol>
   </div>
 </aside>
@@ -225,7 +226,8 @@ const WO = [
    remark:'Dear customer, the UTR you provided does not match any successful transaction on our side.\nPlease check the following:\n1. The UTR should be 12 digits.\n2. The payment receipt should show status "Success".\n3. The receiving account should be the one shown on the deposit page.\nAfter checking, please submit a new ticket with the correct UTR and receipt. Thank you.'},
   {id:'2611100729531646288',type:'取款未到账',uid:'8298785',acct:'917****520',state:4,amt:'2300',sub:'2026-11-10 07:29:53',upd:'2026-11-10 10:15:40',man:'kf_ravi',
    remark:'Dear customer, your withdrawal has been processed by the bank and the payment is successful. Bank reference number: 431409872215. It may take up to 24 hours to reflect in your bank account depending on your bank.\nIf you have not received it after 24 hours, please contact your bank with this reference number first. Most delays are caused by the receiving bank, and the bank can trace the payment with the reference number.\nIf the bank confirms that no amount was received, please submit a new ticket and attach the following:\n1. Bank statement for the past 3 days, showing your account number and name.\n2. A screenshot of the withdrawal record in your game account.\n3. The time you contacted your bank and the reply from the bank.\nWe will check it again with the payment channel and reply to you within 24 hours. Please do not submit repeated tickets for the same withdrawal, as this may delay the checking. We appreciate your understanding and thank you for playing with us.'},
-  {id:'2611100728431218779',type:'存款未到账',uid:'6589694',acct:'918****211',state:1,amt:'300',sub:'2026-11-10 07:28:43',upd:'2026-11-10 07:28:50',man:'admin',remark:SYS},
+  {id:'2611100728431218779',type:'存款未到账',uid:'6589694',acct:'918****211',state:1,amt:'300',sub:'2026-11-10 07:28:43',upd:'2026-11-10 07:28:50',man:'admin',remark:''},
+  {id:'2611100720186634502',type:'删除银行卡',uid:'27715038',acct:'919****407',state:1,amt:'0',sub:'2026-11-10 07:20:18',upd:'2026-11-10 07:20:31',man:'admin',remark:SYS},
   {id:'2611100652107783341',type:'USDT存款未到账',uid:'1103547',acct:'918****662',state:2,amt:'50',sub:'2026-11-10 06:52:10',upd:'2026-11-10 08:30:02',man:'kf_anil',remark:'Checking with the channel.'},
   {id:'2611100631870045126',type:'删除银行卡',uid:'2122263',acct:'917****094',state:4,amt:'0',sub:'2026-11-10 06:31:08',upd:'2026-11-10 06:40:12',man:'kf_meena',remark:'Bank card deleted, you can add a new bank card now.'},
   {id:'2611100615522908714',type:'取款未到账',uid:'31009452',acct:'919****315',state:1,amt:'800',sub:'2026-11-10 06:15:52',upd:'2026-11-10 06:15:52',man:'',remark:''},
